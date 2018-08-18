@@ -46,15 +46,44 @@ public:
     bool operator> (const Duration& rhs) const { return ns_ >  rhs.ns_; }
     bool operator>=(const Duration& rhs) const { return ns_ >= rhs.ns_; }
     bool operator==(const Duration& rhs) const { return ns_ == rhs.ns_; }
+    bool operator!=(const Duration& rhs) const { return ns_ != rhs.ns_; }
 
-    Duration operator+=(const Duration& rhs) { ns_ += rhs.ns_; return *this; }
-    Duration operator-=(const Duration& rhs) { ns_ -= rhs.ns_; return *this; }
-    Duration operator*=(int n) { ns_ *= n; return *this; }
-    Duration operator/=(int n) { ns_ /= n; return *this; }
+    Duration& operator+=(const Duration& rhs) { ns_ += rhs.ns_; return *this; }
+    Duration& operator-=(const Duration& rhs) { ns_ -= rhs.ns_; return *this; }
+    Duration& operator*=(int n) { ns_ *= n; return *this; }
+    Duration& operator/=(int n) { ns_ /= n; return *this; }
 
 private:
     int64_t ns_;    // nanoseconds
 };
+
+inline Duration operator+ (const Duration& lhs, const Duration& rhs) {
+    Duration d = lhs;
+    d += rhs;
+    return d;
+}
+
+inline Duration operator- (const Duration& lhs, const Duration& rhs) {
+    Duration d = lhs;
+    d -= rhs;
+    return d;
+}
+
+inline Duration operator* (const Duration& lhs, int n) {
+    Duration d = lhs;
+    d *= n;
+    return d;
+}
+
+inline Duration operator* (int n, const Duration& rhs) {
+    return rhs * n;
+}
+
+inline Duration operator/ (const Duration& lhs, int n) {
+    Duration d = lhs;
+    d /= n;
+    return d;
+}
 
 } // namespace tento
 
