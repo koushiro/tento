@@ -8,7 +8,7 @@ set(TENTO_BASE
         tento/base/Copyable.hpp
         tento/base/Singleton.hpp
         tento/base/Duration.cpp tento/base/Duration.hpp
-        tento/base/Timestamp.cpp tento/base/Timestamp.hpp
+        tento/base/Timestamp.hpp
         tento/base/ThreadPool.cpp tento/base/ThreadPool.hpp
         )
 
@@ -32,7 +32,8 @@ set(TENTO_NET_UDP
         )
 
 set(TENTO_NET_HTTP
-)
+
+        )
 
 add_executable(tento
         main.cpp

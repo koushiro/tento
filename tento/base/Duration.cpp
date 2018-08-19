@@ -5,10 +5,10 @@
 #include "Duration.hpp"
 
 namespace tento {
-static const int64_t kNanosecond = 1LL;
-static const int64_t kMicrosecond = 1000;
-static const int64_t kMillisecond = 1000 * kMicrosecond;
-static const int64_t kSecond = 1000 * kMillisecond;
-static const int64_t kMinute = 60 * kSecond;
-static const int64_t kHour = 60 * kMinute;
+const int64_t Duration::kNanosecond = 1LL;
+const int64_t Duration::kMicrosecond = 1000;
+const int64_t Duration::kMillisecond = 1000 * kMicrosecond;
+const int64_t Duration::kSecond = 1000 * kMillisecond;
+const int64_t Duration::kMinute = 60 * kSecond;
+const int64_t Duration::kHour = 60 * kMinute;
 }
