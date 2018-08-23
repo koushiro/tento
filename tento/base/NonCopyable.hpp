@@ -2,10 +2,11 @@
 // Created by koushiro on 8/17/18.
 //
 
-#ifndef TENTO_NONCOPYABLE_HPP
-#define TENTO_NONCOPYABLE_HPP
+#pragma once
 
-namespace tento {
+#include "Common.hpp"
+
+NAMESPACE_BEGIN(tento)
 
 class NonCopyable {
 public:
@@ -17,6 +18,4 @@ protected:
     ~NonCopyable() = default;
 };
 
-} // namespace tento
-
-#endif //TENTO_NONCOPYABLE_HPP
+NAMESPACE_END(tento)

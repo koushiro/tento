@@ -2,10 +2,11 @@
 // Created by koushiro on 8/17/18.
 //
 
-#ifndef TENTO_SINGLETON_HPP
-#define TENTO_SINGLETON_HPP
+#pragma once
 
-namespace tento {
+#include "Common.hpp"
+
+NAMESPACE_BEGIN(tento)
 
 template<typename T>
 class Singleton {
@@ -23,6 +24,4 @@ private:
     ~Singleton() = default;
 };
 
-} // namespace tento
-
-#endif //TENTO_SINGLETON_HPP
+NAMESPACE_END(tento)

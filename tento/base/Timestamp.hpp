@@ -2,13 +2,12 @@
 // Created by koushiro on 8/17/18.
 //
 
-#ifndef TENTO_TIMESTAMP_HPP
-#define TENTO_TIMESTAMP_HPP
+#pragma once
 
 #include "Duration.hpp"
 #include <chrono>
 
-namespace tento {
+NAMESPACE_BEGIN(tento)
 
 class Timestamp {
 public:
@@ -81,6 +80,4 @@ inline Timestamp operator- (const Timestamp& ts, const Duration& duration) {
     return timestamp;
 }
 
-} // namespace tento
-
-#endif //TENTO_TIMESTAMP_HPP
+NAMESPACE_END(tento)

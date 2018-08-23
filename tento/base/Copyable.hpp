@@ -2,10 +2,11 @@
 // Created by koushiro on 8/17/18.
 //
 
-#ifndef TENTO_COPYABLE_HPP
-#define TENTO_COPYABLE_HPP
+#pragma once
 
-namespace tento {
+#include "Common.hpp"
+
+NAMESPACE_BEGIN(tento)
 
 class Copyable {
 protected:
@@ -13,6 +14,4 @@ protected:
     ~Copyable() = default;
 };
 
-} // namespace tento
-
-#endif //TENTO_COPYABLE_HPP
+NAMESPACE_END(tento)

@@ -2,15 +2,16 @@
 // See https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.h
 // and https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.cc
 
-#ifndef TENTO_BUFFER_HPP
-#define TENTO_BUFFER_HPP
+#pragma once
+
+#include <tento/base/Common.hpp>
 
 #include <vector>
 #include <algorithm>
 #include <cassert>
 #include <cstring>
 
-namespace tento {
+NAMESPACE_BEGIN(tento)
 
 /// A buffer class modeled after org.jboss.netty.buffer.ChannelBuffer
 ///
@@ -182,6 +183,4 @@ private:
     static const char kCRLF[];
 };
 
-} // namespace tento
-
-#endif //TENTO_BUFFER_HPP
+NAMESPACE_END(tento)

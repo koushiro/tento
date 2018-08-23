@@ -2,13 +2,13 @@
 // Created by koushiro on 8/17/18.
 //
 
-#ifndef TENTO_DURATION_HPP
-#define TENTO_DURATION_HPP
+#pragma once
 
+#include "Common.hpp"
 #include <cstdint>
 #include <sys/time.h>
 
-namespace tento {
+NAMESPACE_BEGIN(tento)
 
 class Duration {
 public:
@@ -85,6 +85,4 @@ inline Duration operator/ (const Duration& lhs, int n) {
     return d;
 }
 
-} // namespace tento
-
-#endif //TENTO_DURATION_HPP
+NAMESPACE_END(tento)
