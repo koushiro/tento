@@ -7,7 +7,6 @@ set(TENTO_BASE
         tento/base/Common.hpp
         tento/base/NonCopyable.hpp
         tento/base/Copyable.hpp
-        tento/base/Singleton.hpp
         tento/base/Duration.cpp
         tento/base/Duration.hpp
         tento/base/Timestamp.hpp

@@ -15,25 +15,51 @@
 
 NAMESPACE_BEGIN(tento)
 
-class Logger {
-public:
-    Logger() {
+#define LOGGER_NAME "tento"
 
-    }
+void InitConsoleLogger() {
+    auto logger = spdlog::stdout_color_mt(LOGGER_NAME);
+    logger->set_level(spdlog::level::trace);
+    logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
 
-    ~Logger() {
+    logger->info(">>>>>>>>>>>>> Start Console Logging <<<<<<<<<<<<<");
+}
 
-    }
+void InitBasicLogger() {
+    auto logger = spdlog::basic_logger_mt(LOGGER_NAME, "logs/tento.log");
+    logger->set_level(spdlog::level::info);
+    logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
 
-private:
+    logger->info(">>>>>>>>>>>>> Start Basic-File Logging <<<<<<<<<<<<<");
+}
 
-};
+void InitBothLogger() {
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::trace);
 
-#define LOG_TRACE
-#define LOG_DEBUG
-#define LOG_INFO
-#define LOG_WARN
-#define LOG_ERROR
-#define LOG_CRITICAL
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/tento.log", true);
+    file_sink->set_level(spdlog::level::info);
+
+    auto sinks = spdlog::sinks_init_list { console_sink, file_sink };
+
+    auto logger = std::make_shared<spdlog::logger>(LOGGER_NAME, sinks);
+    logger->set_level(spdlog::level::trace);
+    logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
+
+    spdlog::register_logger(logger);
+
+    logger->info(">>>>>>>>>>> Start Console & Basic-File logging <<<<<<<<<<<");
+}
+
+//void InitAsyncLogger() {
+//
+//}
+
+#define LOG_TRACE(...) spdlog::get(LOGGER_NAME)->trace(__VA_ARGS__)
+#define LOG_DEBUG(...) spdlog::get(LOGGER_NAME)->debug(__VA_ARGS__)
+#define LOG_INFO(...) spdlog::get(LOGGER_NAME)->info(__VA_ARGS__)
+#define LOG_WARN(...) spdlog::get(LOGGER_NAME)->warn(__VA_ARGS__)
+#define LOG_ERROR(...) spdlog::get(LOGGER_NAME)->error(__VA_ARGS__)
+#define LOG_CRITICAL(...) spdlog::get(LOGGER_NAME)->critical(__VA_ARGS__)
 
 NAMESPACE_END(tento)
