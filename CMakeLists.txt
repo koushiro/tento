@@ -53,7 +53,7 @@ set(TENTO_NET_HTTP
 
         )
 
-include_directories(tento/../)
+include_directories(.)
 include_directories(ext/fmt/include)
 include_directories(ext/spdlog/include)
 

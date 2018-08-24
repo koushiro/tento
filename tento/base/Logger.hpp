@@ -13,6 +13,8 @@
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
+#include <iostream>
+
 NAMESPACE_BEGIN(tento)
 
 #define LOGGER_NAME "tento"
@@ -26,29 +28,40 @@ void InitConsoleLogger() {
 }
 
 void InitBasicLogger() {
-    auto logger = spdlog::basic_logger_mt(LOGGER_NAME, "logs/tento.log");
-    logger->set_level(spdlog::level::info);
-    logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
+    try {
+        auto logger = spdlog::basic_logger_mt(LOGGER_NAME, "logs/tento.log");
+        logger->set_level(spdlog::level::info);
+        logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
 
-    logger->info(">>>>>>>>>>>>> Start Basic-File Logging <<<<<<<<<<<<<");
+        logger->info(">>>>>>>>>>>>> Start Basic-File Logging <<<<<<<<<<<<<");
+        
+    } catch (spdlog::spdlog_ex& ex) {
+        std::cout <<  "Log initialization failed: " << ex.what() << std::endl;
+    }
 }
 
 void InitBothLogger() {
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink->set_level(spdlog::level::trace);
+    try {
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        console_sink->set_level(spdlog::level::trace);
 
-    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/tento.log", true);
-    file_sink->set_level(spdlog::level::info);
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/tento.log", true);
+        file_sink->set_level(spdlog::level::info);
 
-    auto sinks = spdlog::sinks_init_list { console_sink, file_sink };
+        auto sinks = spdlog::sinks_init_list{console_sink, file_sink};
 
-    auto logger = std::make_shared<spdlog::logger>(LOGGER_NAME, sinks);
-    logger->set_level(spdlog::level::trace);
-    logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
+        auto logger = std::make_shared<spdlog::logger>(LOGGER_NAME, sinks);
+        logger->set_level(spdlog::level::trace);
+        logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
 
-    spdlog::register_logger(logger);
+        spdlog::register_logger(logger);
 
-    logger->info(">>>>>>>>>>> Start Console & Basic-File logging <<<<<<<<<<<");
+        logger->info(">>>>>>>>>>> Start Console & Basic-File logging <<<<<<<<<<<");
+
+    } catch (spdlog::spdlog_ex& ex) {
+        std::cout <<  "Log initialization failed: " << ex.what() << std::endl;
+
+    }
 }
 
 //void InitAsyncLogger() {
