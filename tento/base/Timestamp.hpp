@@ -4,18 +4,20 @@
 
 #pragma once
 
-#include "Duration.hpp"
+#include <tento/base/Copyable.hpp>
+#include <tento/base/Duration.hpp>
+
 #include <chrono>
 
 NAMESPACE_BEGIN(tento)
 
-class Timestamp {
+class Timestamp : public Copyable {
 public:
     Timestamp() : ns_(0) {}
     explicit Timestamp(int64_t nanoseconds) : ns_(nanoseconds) {}
     explicit Timestamp(const struct timeval& t)
-        : ns_(int64_t(t.tv_sec) * Duration::kSecond
-            + (int64_t)t.tv_usec * Duration::kMicrosecond) {}
+        : ns_(static_cast<int64_t>(t.tv_sec) * Duration::kSecond +
+              static_cast<int64_t>(t.tv_usec) * Duration::kMicrosecond) {}
 
     static Timestamp Now() {
         using Nanoseconds = std::chrono::nanoseconds;
@@ -27,15 +29,16 @@ public:
         );
     }
 
-    int64_t UnixNanoSec() { return ns_; }
+    int64_t UnixNanoSec()  { return ns_; }
     int64_t UnixMicroSec() { return ns_ / Duration::kMicrosecond; }
     int64_t UnixMilliSec() { return ns_ / Duration::kMillisecond; }
-    int64_t UnixSec() { return ns_ / Duration::kSecond; }
+    int64_t UnixSec()      { return ns_ / Duration::kSecond; }
 
     struct timeval TimeVal() const {
         struct timeval t;
-        t.tv_sec = (long)(ns_ / Duration::kSecond);
-        t.tv_usec = (long)(ns_ % Duration::kSecond) / (long)Duration::kMicrosecond;
+        t.tv_sec = static_cast<long>(ns_ / Duration::kSecond);
+        t.tv_usec = static_cast<long>(ns_ % Duration::kSecond) /
+                    static_cast<long>(Duration::kMicrosecond);
         return t;
     }
 

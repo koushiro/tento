@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include "Common.hpp"
+#include <tento/base/Common.hpp>
+#include <tento/base/NonCopyable.hpp>
 
 NAMESPACE_BEGIN(tento)
 
 template<typename T>
-class Singleton {
+class Singleton : public NonCopyable {
 public:
     Singleton(const Singleton&) = delete;
     Singleton& operator=(const Singleton&) = delete;

@@ -4,14 +4,12 @@
 
 #pragma once
 
-#include "Common.hpp"
+#include <tento/base/Common.hpp>
 
 NAMESPACE_BEGIN(tento)
 
 class Copyable {
-protected:
-    Copyable() = default;
-    ~Copyable() = default;
+
 };
 
 NAMESPACE_END(tento)

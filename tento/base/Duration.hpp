@@ -4,13 +4,15 @@
 
 #pragma once
 
-#include "Common.hpp"
+#include <tento/base/Common.hpp>
+#include <tento/base/Copyable.hpp>
+
 #include <cstdint>
 #include <sys/time.h>
 
 NAMESPACE_BEGIN(tento)
 
-class Duration {
+class Duration : public Copyable {
 public:
     static const int64_t kNanosecond;   // = 1LL
     static const int64_t kMicrosecond;  // = 1000
@@ -24,7 +26,8 @@ public:
         : ns_(t.tv_sec * kSecond + t.tv_usec * kMicrosecond) {}
     explicit Duration(int64_t nanoseconds) : ns_(nanoseconds) {}
     explicit Duration(int nanoseconds) : ns_(nanoseconds) {}
-    explicit Duration(double seconds) : ns_(int64_t(seconds * kSecond)) {}
+    explicit Duration(double seconds)
+        : ns_(static_cast<int64_t>(seconds * kSecond)) {}
 
     int64_t Nanoseconds() const { return ns_; }
     double Microseconds() const { return double(ns_) / kMicrosecond; }
@@ -35,8 +38,9 @@ public:
 
     struct timeval TimeVal() const {
         struct timeval t;
-        t.tv_sec = long(ns_ / kSecond);
-        t.tv_usec = long(ns_ % kSecond) / long(kMicrosecond);
+        t.tv_sec = static_cast<long>(ns_ / kSecond);
+        t.tv_usec = static_cast<long>(ns_ % kSecond) /
+                    static_cast<long>(kMicrosecond);
         return t;
     }
 

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <tento/base/Common.hpp>
+#include <tento/base/Copyable.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -24,7 +25,7 @@ NAMESPACE_BEGIN(tento)
 /// 0       <=      readeIndex   <=    writeIndex    <=     size
 /// |-kCheapPrependSize-|----------- kInitialSize ------------|
 /// @endcode
-class Buffer {
+class Buffer : public Copyable {
 public:
     static const size_t kCheapPrependSize;
     static const size_t kInitialSize;
@@ -138,6 +139,7 @@ public:
         const char* crlf = std::search(start, WriteBegin(), kCRLF, kCRLF + 2);
         return crlf == WriteBegin() ? nullptr : crlf;
     }
+
     const char* FindCRLF() const {
         return FindCRLF(ReadBegin());
     }
