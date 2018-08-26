@@ -35,7 +35,8 @@ public:
                     size_t prependSize = kCheapPrependSize)
         : buffer_(kCheapPrependSize + initialSize),
           readIndex_(kCheapPrependSize),
-          writeIndex_(kCheapPrependSize) {
+          writeIndex_(kCheapPrependSize)
+    {
         assert(PrependableBytes() == prependSize);
         assert(ReadableBytes() == 0);
         assert(WritableBytes() == initialSize);
