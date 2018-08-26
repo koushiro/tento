@@ -4,11 +4,12 @@
 
 #pragma once
 
-#include <tento/base/Common.hpp>
-#include <tento/base/Copyable.hpp>
+#include <sys/time.h>
 
 #include <cstdint>
-#include <sys/time.h>
+
+#include "tento/base/Common.hpp"
+#include "tento/base/Copyable.hpp"
 
 NAMESPACE_BEGIN(tento)
 

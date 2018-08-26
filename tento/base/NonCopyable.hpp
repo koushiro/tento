@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <tento/base/Common.hpp>
+#include "tento/base/Common.hpp"
 
 NAMESPACE_BEGIN(tento)
 

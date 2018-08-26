@@ -2,7 +2,7 @@
 // Created by koushiro on 8/17/18.
 //
 
-#include <tento/base/Duration.hpp>
+#include "tento/base/Duration.hpp"
 
 NAMESPACE_BEGIN(tento)
 

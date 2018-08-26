@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <tento/base/Common.hpp>
-
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
+
+#include "tento/base/Common.hpp"
 
 NAMESPACE_BEGIN(tento)
 

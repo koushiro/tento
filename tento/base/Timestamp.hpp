@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <tento/base/Copyable.hpp>
-#include <tento/base/Duration.hpp>
-
 #include <chrono>
+
+#include "tento/base/Copyable.hpp"
+#include "tento/base/Duration.hpp"
 
 NAMESPACE_BEGIN(tento)
 

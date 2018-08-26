@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <tento/base/Common.hpp>
-#include <tento/base/Copyable.hpp>
-
-#include <vector>
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <vector>
+
+#include "tento/base/Common.hpp"
+#include "tento/base/Copyable.hpp"
 
 NAMESPACE_BEGIN(tento)
 

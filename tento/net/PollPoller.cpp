@@ -2,16 +2,14 @@
 // Created by koushiro on 8/26/18.
 //
 
-#include <tento/net/PollPoller.hpp>
+#include "tento/net/PollPoller.hpp"
 
-#include <tento/base/Logger.hpp>
-#include <tento/net/Channel.hpp>
+#include <sys/poll.h>
 
 #include <algorithm>
 
-#include <sys/poll.h>
-#include "PollPoller.hpp"
-
+#include "tento/base/Logger.hpp"
+#include "tento/net/Channel.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)

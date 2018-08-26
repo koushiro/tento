@@ -2,7 +2,7 @@
 // Created by koushiro on 8/25/18.
 //
 
-#include <tento/base/Logger.hpp>
+#include <iostream>
 
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -10,7 +10,7 @@
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include <iostream>
+#include "tento/base/Logger.hpp"
 
 NAMESPACE_BEGIN(tento)
 
