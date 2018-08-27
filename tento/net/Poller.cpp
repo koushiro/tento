@@ -11,7 +11,7 @@ NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 Poller* Poller::NewDefaultPoller(EventLoop* loop) {
-#if 0
+#if 1
     return new EPollPoller(loop);
 #else
     return new PollPoller(loop);

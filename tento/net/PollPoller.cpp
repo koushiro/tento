@@ -22,7 +22,7 @@ PollPoller::PollPoller(EventLoop* loop)
 PollPoller::~PollPoller() = default;
 
 Timestamp PollPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
-    // pollfds is an input and output parameter.
+    // pollfds.data() is an input and output parameter.
     int numEvents = poll(pollfds_.data(), pollfds_.size(), timeoutMs);
     Timestamp now = Timestamp::Now();
     if (numEvents > 0) {
@@ -56,9 +56,10 @@ void PollPoller::fillActiveChannels(int numEvents,
 }
 
 void PollPoller::UpdateChannel(Channel* channel) {
-    LOG_TRACE("UpdateChannel, fd = {}, events = {}",
-              channel->Fd(), channel->Events());
-    if (channel->Index() < 0) {
+    int index = channel->Index();
+    LOG_TRACE("UpdateChannel, fd = {}, events = {}, index = {}",
+              channel->Fd(), channel->Events(), index);
+    if (index < 0) {
         // New channel, add the new channel to pollfds_.
         assert(channels_.find(channel->Fd()) == channels_.end());
         struct pollfd pfd;
@@ -73,8 +74,7 @@ void PollPoller::UpdateChannel(Channel* channel) {
         // Existed channel, update the existed channel in the pollfds_.
         assert(channels_.find(channel->Fd()) != channels_.end());
         assert(channels_[channel->Fd()] == channel);
-        int index = channel->Index();
-        assert(index > 0 && index < pollfds_.size());
+        assert(index >= 0 && index < pollfds_.size());
 
         auto& pfd = pollfds_[index];
         assert(pfd.fd == channel->Fd() || pfd.fd == -1);
@@ -98,12 +98,12 @@ void PollPoller::RemoveChannel(Channel* channel) {
     // Called UpdateChannel (set NoneEvent) before RemoveChannel.
     assert(channel->IsNoneEvent());
     int index = channel->Index();
-    assert(index > 0 && index < pollfds_.size());
+    assert(index >= 0 && index < pollfds_.size());
 
     auto& pfd = pollfds_[index];
     assert(pfd.fd < 0 && pfd.events == channel->Events());
-    size_t n = channels_.erase(channel->Fd());
-    assert(n == 1);
+    size_t num = channels_.erase(channel->Fd());
+    assert(num == 1);
 
     // If the fd of the channel to be removed is not the last pollfd of pollfds_,
     // exchange the pollfd to be deleted with the last pollfd, and pop_back.

@@ -37,7 +37,7 @@ void DropAllLogger();
     spdlog::get(LOGGER_NAME)->warn(__VA_ARGS__)
 #define LOG_ERROR(...) \
     spdlog::get(LOGGER_NAME)->error(__VA_ARGS__)
-#define LOG_CRITICAL(...) \
+#define LOG_FATAL(...) \
     spdlog::get(LOGGER_NAME)->critical(__VA_ARGS__)
 
 NAMESPACE_END(tento)

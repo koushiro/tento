@@ -87,7 +87,7 @@ private:
     const int   fd_;        // File description, the channel isn't responsible for closing it.
     int         events_;    // Concerned events.
     int         revents_;   // The event returned by poll/epoll.
-    int         index_;     // The index of the polling event array.
+    int         index_;     // For PollPoller / EPollPoller.
     bool        logHup_;    // For POLLHUP/EPOLLHUP
 
     std::weak_ptr<void> tie_;
