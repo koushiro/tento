@@ -28,7 +28,7 @@ public:
     void RemoveChannel(Channel* channel);
 
 private:
-    void epollControl(int operation, Channel* channel);
+    void epollControl(int op, Channel* channel);
 
 public:
     static const int kNew;

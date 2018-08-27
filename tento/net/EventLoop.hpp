@@ -18,6 +18,8 @@ NAMESPACE_BEGIN(net)
 class Channel;
 class EPoller;
 
+using ChannelList = std::vector<Channel*>;
+
 class EventLoop : public NonCopyable {
 public:
     EventLoop();
@@ -54,7 +56,6 @@ private:
     Timestamp pollReturnTime_;
     std::unique_ptr<EPoller> poller_;
 
-    using ChannelList = std::vector<Channel*>;
     ChannelList activeChannels_;        // active channels that returned from poller.
     Channel* currentActiveChannel_;     // the active channel currently being processed.
 };

@@ -101,7 +101,5 @@ private:
     EventCallback       errorCallback_;
 };
 
-using ChannelList = std::vector<Channel*>;
-
 NAMESPACE_END(net)
 NAMESPACE_END(tento)

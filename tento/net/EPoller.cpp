@@ -22,7 +22,7 @@ EPoller::EPoller(EventLoop* loop)
       epfd_(epoll_create1(EPOLL_CLOEXEC)),
       events_(kInitEventListSize)
 {
-    if (epfd_ <= 0) {
+    if (epfd_ == -1) {
         LOG_ERROR("EPoller::EPoller epoll_create1 failed");
     }
 }
@@ -93,27 +93,27 @@ void EPoller::RemoveChannel(Channel* channel) {
     assert(channels_[channel->Fd()] == channel);
     // Called UpdateChannel (set NoneEvent) before RemoveChannel.
     assert(channel->IsNoneEvent());
-    int index = channel->Status();
-    assert(index == kAdded || index == kDeleted);
+    int status = channel->Status();
+    assert(status == kAdded || status == kDeleted);
     size_t num = channels_.erase(channel->Fd());
     assert(num == 1);
 
-    if (index == kAdded) {
+    if (status == kAdded) {
         epollControl(EPOLL_CTL_DEL, channel);
     }
     channel->SetStatus(kNew);
 }
 
-void EPoller::epollControl(int operation, Channel* channel) {
+void EPoller::epollControl(int op, Channel* channel) {
     struct epoll_event event;
     memset(&event, 0, sizeof(event));
     event.events = static_cast<uint32_t>(channel->Events());
     event.data.ptr = channel;
-    LOG_TRACE("epollControl operation = {} (ADD:1, DEL:2, MOD:3), fd = {}, event = {}",
-              operation,
-              channel->Fd(),
-              channel->EventsToString());
-    int ret = epoll_ctl(epfd_, operation, channel->Fd(), &event);
+    LOG_TRACE("epollControl operation = {} (ADD:1, DEL:2, MOD:3), "
+              "fd = {}, event = {}",
+              op,
+              channel->Fd(), channel->EventsToString());
+    int ret = epoll_ctl(epfd_, op, channel->Fd(), &event);
     if (ret == -1) {
         LOG_ERROR("epoll_ctl() failed");
     }
