@@ -6,21 +6,21 @@
 
 #include "tento/base/Logger.hpp"
 #include "tento/net/Channel.hpp"
-#include "tento/net/Poller.hpp"
+#include "tento/net/EPoller.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 __thread EventLoop* loopInThisThread = nullptr;
 
-const int EventLoop::kPollTimeMs = 10000;
+const int EventLoop::kPollTimeMs = 10000;   // 10 seconds
 
 EventLoop::EventLoop()
     : tid_(std::this_thread::get_id()),
       looping_(false),
       quit_(false),
       eventHandling_(false),
-      poller_(Poller::NewDefaultPoller(this)),
+      poller_(std::make_unique<EPoller>(this)),
       currentActiveChannel_(nullptr)
 {
     LOG_TRACE("EventLoop Created {} in thread {}", (void*)this, tid_);
@@ -64,7 +64,7 @@ void EventLoop::Loop() {
 void EventLoop::Quit() {
     quit_ = true;
     if (!IsInLoopThread()) {
-
+        // wakeup
     }
 }
 

@@ -16,7 +16,7 @@ NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 class Channel;
-class Poller;
+class EPoller;
 
 class EventLoop : public NonCopyable {
 public:
@@ -52,9 +52,9 @@ private:
     std::atomic_bool eventHandling_;
 
     Timestamp pollReturnTime_;
-    std::unique_ptr<Poller> poller_;
+    std::unique_ptr<EPoller> poller_;
 
-    typedef std::vector<Channel*> ChannelList;
+    using ChannelList = std::vector<Channel*>;
     ChannelList activeChannels_;        // active channels that returned from poller.
     Channel* currentActiveChannel_;     // the active channel currently being processed.
 };

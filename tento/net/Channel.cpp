@@ -4,28 +4,27 @@
 
 #include "tento/net/Channel.hpp"
 
-#include <sys/poll.h>
+#include <sys/epoll.h>
 
 #include <cassert>
 #include <sstream>
 #include <string>
 
 #include "tento/base/Logger.hpp"
-#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 const int Channel::kNoneEvent = 0;
-const int Channel::kReadEvent = POLLIN | POLLPRI;
-const int Channel::kWriteEvent = POLLOUT;
+const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
+const int Channel::kWriteEvent = EPOLLOUT;
 
 Channel::Channel(EventLoop* loop, int fd)
     : ownerLoop_(loop),
       fd_(fd),
       events_(0),
       revents_(0),
-      index_(-1),
+      status_(-1),
       logHup_(true),
       tied_(false),
       eventHandling_(false)
@@ -44,22 +43,19 @@ void Channel::HandleEvent(tento::Timestamp timestamp) {
 
 void Channel::handleEventWithGuard(Timestamp receiveTime) {
     eventHandling_  = true;
-    if ((revents_ & POLLHUP) && !(revents_ & POLLIN)) {
+    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
         if (logHup_) {
-            LOG_WARN("fd = {} Channel::handleEventWithGuard() POLLHUP", fd_);
+            LOG_WARN("fd = {} Channel::handleEventWithGuard() EPOLLHUP", fd_);
         }
         if (closeCallback_) closeCallback_();
     }
-    if (revents_ & POLLNVAL) {
-        LOG_WARN("fd = {} Channel::handleEventWithGuard() POLLNVAL", fd_);
-    }
-    if (revents_ & (POLLERR | POLLNVAL)) {
+    if (revents_ & EPOLLERR) {
         if (errorCallback_) errorCallback_();
     }
-    if (revents_ & (POLLIN | POLLPRI | POLLRDHUP)) {
+    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
         if (readCallback_) readCallback_(receiveTime);
     }
-    if (revents_ & POLLOUT) {
+    if (revents_ & EPOLLOUT) {
         if (writeCallback_) writeCallback_();
     }
     eventHandling_ = false;
@@ -92,20 +88,18 @@ std::string Channel::eventsToString(int fd, int ev)
 {
     std::ostringstream oss;
     oss << fd << ": ";
-    if (ev & POLLIN)
+    if (ev & EPOLLIN)
         oss << "IN ";
-    if (ev & POLLPRI)
+    if (ev & EPOLLPRI)
         oss << "PRI ";
-    if (ev & POLLOUT)
+    if (ev & EPOLLOUT)
         oss << "OUT ";
-    if (ev & POLLHUP)
+    if (ev & EPOLLHUP)
         oss << "HUP ";
-    if (ev & POLLRDHUP)
+    if (ev & EPOLLRDHUP)
         oss << "RDHUP ";
-    if (ev & POLLERR)
+    if (ev & EPOLLERR)
         oss << "ERR ";
-    if (ev & POLLNVAL)
-        oss << "NVAL ";
     return oss.str().c_str();
 }
 

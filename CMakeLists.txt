@@ -22,12 +22,8 @@ set(TENTO_NET
         tento/net/Channel.hpp
         tento/net/EventLoop.cpp
         tento/net/EventLoop.hpp
-        tento/net/Poller.cpp
-        tento/net/Poller.hpp
-        tento/net/PollPoller.cpp
-        tento/net/PollPoller.hpp
-        tento/net/EPollPoller.cpp
-        tento/net/EPollPoller.hpp
+        tento/net/EPoller.cpp
+        tento/net/EPoller.hpp
 
         tento/net/Timer.cpp
         tento/net/Timer.hpp

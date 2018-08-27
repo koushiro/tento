@@ -5,16 +5,17 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
+#include <vector>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
 #include "tento/base/Timestamp.hpp"
+#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
-
-class EventLoop;
 
 // A selectable I/O channel.
 // Channel class doesn't own the file description.
@@ -47,11 +48,11 @@ public:
     bool IsReading()   const { return static_cast<bool>(events_ & kReadEvent); }
     bool IsWriting()   const { return static_cast<bool>(events_ & kWriteEvent); }
 
-    void EnableReading()  { events_ |=  kReadEvent;  update(); }
-    void DisableReading() { events_ &= ~kReadEvent;  update(); }
-    void EnableWriting()  { events_ !=  kWriteEvent; update(); }
-    void DisableWriting() { events_ &= ~kWriteEvent; update(); }
-    void DisableAll()     { events_ =   kNoneEvent;  update(); }
+    void EnableReadEvent()   { events_ |=  kReadEvent;  update(); }
+    void DisableReadEvent()  { events_ &= ~kReadEvent;  update(); }
+    void EnableWriteEvent()  { events_ !=  kWriteEvent; update(); }
+    void DisableWriteEvent() { events_ &= ~kWriteEvent; update(); }
+    void DisableAllEvents()  { events_ =   kNoneEvent;  update(); }
 
 private:
     void update();
@@ -67,14 +68,14 @@ public:
     // Used to judge whether the channel is a new one for Poller.
     // index == -1: New channel.
     // index > 0  : Existed channel.
-    int  Index()                const { return index_; }
-    void SetIndex(int index)          { index_  = index; }
+    int  Status()                const { return status_; }
+    void SetStatus(int status)         { status_  = status; }
 
-public:     // For debug.
+    // For debug.
+public:
     std::string ReventsToString() const;
     std::string EventsToString() const;
-
-private:    // For debug.
+private:
     static std::string eventsToString(int fd, int ev);
 
 private:
@@ -86,9 +87,9 @@ private:
     EventLoop*  ownerLoop_; // The EventLoop to which the channel belongs.
     const int   fd_;        // File description, the channel isn't responsible for closing it.
     int         events_;    // Concerned events.
-    int         revents_;   // The event returned by poll/epoll.
-    int         index_;     // For PollPoller / EPollPoller.
-    bool        logHup_;    // For POLLHUP/EPOLLHUP
+    int         revents_;   // The event returned by epoll.
+    int         status_;    // For EPoller.
+    bool        logHup_;    // For EPOLLHUP
 
     std::weak_ptr<void> tie_;
     bool                tied_;
@@ -99,6 +100,8 @@ private:
     EventCallback       closeCallback_;
     EventCallback       errorCallback_;
 };
+
+using ChannelList = std::vector<Channel*>;
 
 NAMESPACE_END(net)
 NAMESPACE_END(tento)

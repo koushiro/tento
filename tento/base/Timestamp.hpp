@@ -21,7 +21,7 @@ public:
 
     static Timestamp Now() {
         using Nanoseconds = std::chrono::nanoseconds;
-        using Clock = std::chrono::system_clock;
+        using Clock = std::chrono::high_resolution_clock;
         return Timestamp(
             std::chrono::duration_cast<Nanoseconds>(
                 Clock::now().time_since_epoch()
