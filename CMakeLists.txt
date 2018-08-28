@@ -39,6 +39,7 @@ set(TENTO_NET
         tento/net/Acceptor.hpp
         tento/net/Connector.cpp
         tento/net/Connector.hpp
+        tento/net/Callbacks.hpp
         )
 
 set(TENTO_NET_TCP
@@ -59,8 +60,8 @@ set(TENTO_NET_HTTP
         )
 
 include_directories(.)
-include_directories(ext/fmt/include)
-include_directories(ext/spdlog/include)
+include_directories(deps/fmt/include)
+include_directories(deps/spdlog/include)
 
 add_executable(tento
         main.cpp

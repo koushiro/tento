@@ -6,11 +6,12 @@
 
 NAMESPACE_BEGIN(tento)
 
-const int64_t Duration::kNanosecond = 1LL;
-const int64_t Duration::kMicrosecond = 1000;
-const int64_t Duration::kMillisecond = 1000 * kMicrosecond;
-const int64_t Duration::kSecond = 1000 * kMillisecond;
-const int64_t Duration::kMinute = 60 * kSecond;
-const int64_t Duration::kHour = 60 * kMinute;
+const uint32_t Duration::NANOS_PER_MICRO = 1'000;
+const uint32_t Duration::NANOS_PER_MILLI = 1'000'000;
+const uint32_t Duration::NANOS_PER_SEC = 1'000'000'000;
+const uint32_t Duration::MILLIS_PER_SEC = 1'000;
+const uint32_t Duration::MICROS_PER_SEC = 1'000'000;
+const uint32_t Duration::SECS_PER_MIN = 60;
+const uint32_t Duration::SECS_PER_HOUR = 3600;
 
 NAMESPACE_END(tento)
