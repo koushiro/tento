@@ -72,6 +72,10 @@ public:
     /// Returns the fractional part of this Duration, in milliseconds.
     uint32_t MilliPart()    const { return nanos_ / NANOS_PER_MILLI; }
 
+    bool IsZero() const {
+        return secs_ == 0 && nanos_ == 0;
+    }
+
     double AsMicros() const {
         return secs_ * MICROS_PER_SEC +
             static_cast<double>(nanos_) / NANOS_PER_MICRO;

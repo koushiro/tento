@@ -13,8 +13,10 @@ NAMESPACE_BEGIN(tento)
 
 class Timestamp : public Copyable {
 public:
-    Timestamp() : ns_(0) {}
-    explicit Timestamp(uint64_t nanoseconds) : ns_(nanoseconds) {}
+    Timestamp() : nanos_(0) {}
+    explicit Timestamp(uint64_t nanos) : nanos_(nanos) {}
+
+    static Timestamp Invalid() { return Timestamp(); }
 
     static Timestamp Now() {
         using Nanoseconds = std::chrono::nanoseconds;
@@ -29,16 +31,62 @@ public:
     }
 
     Duration DurationSince (const Timestamp& earlier) const {
-        uint64_t ns = ns_ - earlier.ns_;
+        assert(nanos_ > earlier.nanos_);
+        uint64_t ns = nanos_ - earlier.nanos_;
         return Duration::FromNanos(ns);
     }
 
     Duration Elapsed() { return DurationSince(Now()); }
 
+    bool operator==(const Timestamp& rhs) const {
+        return nanos_ == rhs.nanos_;
+    }
+    bool operator!=(const Timestamp& rhs) const {
+        return !operator==(rhs);
+    }
+    bool operator< (const Timestamp& rhs) const {
+        return nanos_ <  rhs.nanos_;
+    }
+    bool operator<=(const Timestamp& rhs) const {
+        return operator<(rhs) && operator==(rhs);
+    }
+    bool operator> (const Timestamp& rhs) const {
+        return !operator<=(rhs);
+    }
+    bool operator>=(const Timestamp& rhs) const {
+        return !operator<(rhs);
+    }
+
+    // Maybe overflow
+    Timestamp& operator+=(const Duration& dur) {
+        auto nanos = dur.SecsPart() * Duration::NANOS_PER_SEC + dur.NanosPart();
+        nanos_ += nanos;
+        return *this;
+    }
+
+    Timestamp& operator-=(const Duration& dur) {
+        auto nanos = dur.SecsPart() * Duration::NANOS_PER_SEC + dur.NanosPart();
+        assert(nanos_ > nanos);
+        nanos_ -= nanos;
+        return *this;
+    }
+
 private:
     /// ns_ gives the number of nanoseconds elapsed since the Epoch
     /// 1970-01-01 00:00:00 +0000 (UTC).
-    uint64_t ns_;
+    uint64_t nanos_;
 };
+
+inline Timestamp operator+(const Timestamp& when, const Duration& dur) {
+    Timestamp time = when;
+    time += dur;
+    return time;
+}
+
+inline Timestamp operator-(const Timestamp& when, const Duration& dur) {
+    Timestamp time = when;
+    time -= dur;
+    return time;
+}
 
 NAMESPACE_END(tento)

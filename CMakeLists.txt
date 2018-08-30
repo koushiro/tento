@@ -25,7 +25,6 @@ set(TENTO_NET
         tento/net/EPoller.cpp
         tento/net/EPoller.hpp
 
-        tento/net/Timer.cpp
         tento/net/Timer.hpp
         tento/net/TimerQueue.cpp
         tento/net/TimerQueue.hpp

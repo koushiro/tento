@@ -1,6 +1,6 @@
-// Modified from muduo project https://github.com/chenshuo/muduo
-// See https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.h
-// and https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.cc
+/// Modified from muduo project https://github.com/chenshuo/muduo
+/// See https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.h
+/// and https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.cc
 
 #pragma once
 
@@ -62,7 +62,7 @@ public:
         std::swap(writeIndex_, rhs.writeIndex_);
     }
 
-    // Write
+    /// Write
 public:
     void Write(const void* data, size_t len) {
         EnsureWritableBytes(len);
@@ -80,59 +80,59 @@ public:
     void WriteBytes(size_t n)   { assert(n <= WritableBytes()); writeIndex_ += n; }
     void UnWriteBytes(size_t n) { assert(n <= ReadableBytes()); writeIndex_ -= n; }
 
-    // Append int64_t/int32_t/int16_t/int8_t with network endian
+    /// Append int64_t/int32_t/int16_t/int8_t with network endian
     void Append(const void* data, size_t len) { Write(data, len); }
     void AppendInt64(int64_t x) { int64_t be = htobe64(x); Append(&be, sizeof(be)); }
     void AppendInt32(int32_t x) { int32_t be = htobe32(x); Append(&be, sizeof(be)); }
     void AppendInt16(int16_t x) { int16_t be = htobe16(x); Append(&be, sizeof(be)); }
     void AppendInt8(int8_t  x)  { Append(&x, sizeof(x)); }
 
-    // Insert content, specified by the parameter, into the front of readIndex
+    /// Insert content, specified by the parameter, into the front of readIndex
     void Prepend(const void* data, size_t len) {
         assert(len <= PrependableBytes());
         readIndex_ -= len;
         std::memcpy(ReadBegin(), data, len);
     }
-    // Prepend int64_t/int32_t/int16_t/int8_t with network endian
+    /// Prepend int64_t/int32_t/int16_t/int8_t with network endian
     void PrependInt64(int64_t x) { int64_t be = htobe64(x); Prepend(&be, sizeof(be)); }
     void PrependInt32(int32_t x) { int32_t be = htobe32(x); Prepend(&be, sizeof(be)); }
     void PrependInt16(int16_t x) { int16_t be = htobe16(x); Prepend(&be, sizeof(be)); }
     void PrependInt8(int8_t  x)  { Prepend(&x, sizeof(x)); }
 
-    // Peek (Get the first readable byte)
+    /// Peek (Get the first readable byte)
 public:
     void Peek(void* data, size_t len) const {
         assert(len <= ReadableBytes());
         std::memcpy(data, ReadBegin(), len);
     }
 
-    // Peek int64_t/int32_t/int16_t/int8_t with network endian
+    /// Peek int64_t/int32_t/int16_t/int8_t with network endian
     int64_t PeekInt64() const { int64_t be = 0; Peek(&be, sizeof(be)); return be64toh(be); }
     int32_t PeekInt32() const { int32_t be = 0; Peek(&be, sizeof(be)); return be32toh(be); }
     int16_t PeekInt16() const { int16_t be = 0; Peek(&be, sizeof(be)); return be16toh(be);  }
     int8_t  PeekInt8()  const { int8_t  x = 0;  Peek(&x, sizeof(x));   return x; }
 
-    // Read
+    /// Read
 public:
     void ReadBytes(size_t n) {
         assert(n <= ReadableBytes());
         if (n < ReadableBytes()) {
             readIndex_ += n;
         } else {
-            // Read all readable bytes,
-            // reset readIndex and writeIndex to kCheapPrependSize.
+            /// Read all readable bytes,
+            /// reset readIndex and writeIndex to kCheapPrependSize.
             readIndex_ = kCheapPrependSize;
             writeIndex_ = kCheapPrependSize;
         }
     }
 
-    // Read int64_t/int32_t/int16_t/int8_t with network endian
+    /// Read int64_t/int32_t/int16_t/int8_t with network endian
     int64_t ReadInt64() { int64_t p = PeekInt64(); ReadBytes(sizeof(p)); return p; }
     int64_t ReadInt32() { int32_t p = PeekInt32(); ReadBytes(sizeof(p)); return p; }
     int16_t ReadInt16() { int16_t p = PeekInt16(); ReadBytes(sizeof(p)); return p; }
     int8_t  ReadInt8()  { int8_t  p = PeekInt8();  ReadBytes(sizeof(p)); return p; }
 
-    // Helpers
+    /// Helpers
 public:
     const char* FindCRLF(const char* start) const {
         assert(start >= ReadBegin());
@@ -161,14 +161,14 @@ private:
           char* begin()       { return buffer_.data(); }
 
     void grow(size_t len) {
-        // Linux 多线程服务端编程 -- Page 166.
-        // 内部腾挪：经过若干次读写，readIndex移到较后的位置，留下了较大的 prependable 空间。
-        // 若此时想写入的字节数大于 writable 空间，先将已有 readable 数据移动到前面，腾出更多 writable 空间。
-        // 若腾挪之后的 writable 空间仍然不够写入所需的字节数，则要重新分配 buffer 内存（即 resize buffer）。
+        /// Linux 多线程服务端编程 -- Page 166.
+        /// 内部腾挪：经过若干次读写，readIndex移到较后的位置，留下了较大的 prependable 空间。
+        /// 若此时想写入的字节数大于 writable 空间，先将已有 readable 数据移动到前面，腾出更多 writable 空间。
+        /// 若腾挪之后的 writable 空间仍然不够写入所需的字节数，则要重新分配 buffer 内存（即 resize buffer）。
         if (WritableBytes() + PrependableBytes() < len + kCheapPrependSize) {
             buffer_.resize(writeIndex_ + len);
         } else {
-            // move readable data to the front, make space inside buffer
+            /// move readable data to the front, make space inside buffer
             assert(kCheapPrependSize < readIndex_);
             size_t readable = ReadableBytes();
             memmove(begin() + kCheapPrependSize, begin() + readIndex_, readable);

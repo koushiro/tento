@@ -9,7 +9,7 @@ using namespace tento::net;
 void ThreadFunc() {
     LOG_TRACE("ThreadFunc(): tid = {}", std::this_thread::get_id());
     EventLoop loop;
-    loop.Loop();
+    loop.Run();
 }
 
 int main() {
@@ -18,7 +18,7 @@ int main() {
     EventLoop loop;
     std::thread t(ThreadFunc);
 
-    loop.Loop();
+    loop.Run();
 
     t.join();
 
