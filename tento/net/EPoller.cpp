@@ -23,7 +23,8 @@ EPoller::EPoller(EventLoop* loop)
       events_(kInitEventListSize)
 {
     if (epfd_ == -1) {
-        LOG_ERROR("EPoller::EPoller epoll_create1 failed");
+        LOG_ERROR("EPoller::EPoller epoll_create1 failed, "
+                  "an error '{}' occurred", strerror(errno));
     }
 }
 
@@ -32,14 +33,19 @@ EPoller::~EPoller() {
 }
 
 Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
-    int numEvents = epoll_wait(epfd_,
+    int numReadyFd = epoll_wait(epfd_,
                                events_.data(),
                                static_cast<int>(events_.size()),
                                timeoutMs);
     Timestamp now = Timestamp::Now();
-    if (numEvents > 0) {
-        LOG_TRACE("Events happened, num of events = {}", numEvents);
-        for (int i = 0; i < numEvents; ++i) {
+    if (numReadyFd == -1) {
+        LOG_ERROR("EPoller::Poll() -- epoll_wait(), "
+                  "an error '{}' occurred", strerror(errno));
+    } else if (numReadyFd == 0) {
+        LOG_TRACE("Nothing happened", numReadyFd == 0);
+    } else {
+        LOG_TRACE("Events happened, num of events = {}", numReadyFd);
+        for (int i = 0; i < numReadyFd; ++i) {
             auto channel = static_cast<Channel*>(events_[i].data.ptr);
             auto it = channels_.find(channel->Fd());
             assert(it != channels_.end());
@@ -47,13 +53,9 @@ Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
             channel->SetRevents(events_[i].events);
             activeChannels->push_back(channel);
         }
-        if (numEvents == events_.size()) {
+        if (numReadyFd == events_.size()) {
             events_.resize(events_.size() * 2);
         }
-    } else if (numEvents == 0) {
-        LOG_TRACE("Nothing happened, num of events = {}", numEvents);
-    } else {
-        LOG_ERROR("EPoller::Poll() -- epoll_wait(), num of events < 0");
     }
     return now;
 }
@@ -111,11 +113,11 @@ void EPoller::epollControl(int op, Channel* channel) {
     event.data.ptr = channel;
     LOG_TRACE("epollControl operation = {} (ADD:1, DEL:2, MOD:3), "
               "fd = {}, event = {}",
-              op,
-              channel->Fd(), channel->EventsToString());
+              op, channel->Fd(), channel->EventsToString());
     int ret = epoll_ctl(epfd_, op, channel->Fd(), &event);
     if (ret == -1) {
-        LOG_ERROR("epoll_ctl() failed");
+        LOG_ERROR("EPoller::epollControl() -- epoll_ctl(), "
+                  "an error '{}' occurred", strerror(errno));
     }
 }
 

@@ -35,13 +35,13 @@ Channel::~Channel() {
     assert(!eventHandling_);
 }
 
-void Channel::HandleEvent(tento::Timestamp timestamp) {
+void Channel::HandleEvent(Timestamp when) {
 
     // call handleEventWithGuard()
-    handleEventWithGuard(timestamp);
+    handleEventWithGuard();
 }
 
-void Channel::handleEventWithGuard(Timestamp receiveTime) {
+void Channel::handleEventWithGuard() {
     eventHandling_  = true;
     if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
         if (logHup_) {
@@ -53,7 +53,7 @@ void Channel::handleEventWithGuard(Timestamp receiveTime) {
         if (errorCallback_) errorCallback_();
     }
     if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
-        if (readCallback_) readCallback_(receiveTime);
+        if (readCallback_) readCallback_();
     }
     if (revents_ & EPOLLOUT) {
         if (writeCallback_) writeCallback_();

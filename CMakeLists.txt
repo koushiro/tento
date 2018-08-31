@@ -8,10 +8,10 @@ set(TENTO_BASE
         tento/base/NonCopyable.hpp
         tento/base/Copyable.hpp
         tento/base/Duration.hpp
-        tento/base/Duration.cpp
         tento/base/Timestamp.hpp
         tento/base/Logger.hpp
         tento/base/Logger.cpp
+        tento/base/CountDownLatch.hpp
         )
 
 set(TENTO_NET
