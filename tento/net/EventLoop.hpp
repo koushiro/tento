@@ -5,46 +5,71 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
+#include <mutex>
 #include <thread>
 #include <vector>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
 #include "tento/base/Timestamp.hpp"
+#include "tento/net/Alias.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 class Channel;
 class EPoller;
-
-using ChannelList = std::vector<Channel*>;
+class TimerQueue;
 
 class EventLoop : public NonCopyable {
 public:
     EventLoop();
     ~EventLoop();
 
-    void Loop();
+    /// Runs Loop forever.
+    /// Must be called in the same thread as creation of the object.
+    void Run();
+
+    /// Quits Loop, thread safe.
     void Quit();
 
-    void UpdateChannel(Channel* channel);   // add or update channel in poller.
-    void RemoveChannel(Channel* channel);   // remove channel from poller.
+    /// Internal Usage (Used by Channel).
+    void UpdateChannel(Channel* channel);   /// add or update channel in poller.
+    void RemoveChannel(Channel* channel);   /// remove channel from poller.
+    /// Internal Usage, wakeup I/O thread when polling (Used by ).
+    void WakeUp();
 
 public:
-    void AssertInLoopThread() {
-        if (!IsInLoopThread()) {
-            abortNotInLoopThread();
-        }
-    }
+    /// Runs callback immediately in the loop thread.
+    /// It wakes up the loop, and run the cb.
+    /// Safe to call from other threads.
+    void RunInLoop(Callback cb);
+    /// Queues callback in the loop thread.
+    /// Runs after finish polling.
+    /// Safe to call from other threads.
+    void QueueInLoop(Callback cb);
 
+    /// Safe to call from other threads.
+    /// Runs timer callback (at timestamp/after delay time/every interval time).
+    /// Returns unique timer id.
+    TimerId RunAt(Timestamp time, TimerCallback cb);
+    TimerId RunAfter(Duration delay, TimerCallback cb);
+    TimerId RunEvery(Duration interval, TimerCallback cb);
+    /// Safe to call from other threads.
+    /// Cancel timer with given timerId.
+    void CancelTimer(TimerId timerId);
+
+public:
+    void AssertInLoopThread() { if (!IsInLoopThread()) { abortNotInLoopThread(); } }
     bool IsInLoopThread() const { return tid_ == std::this_thread::get_id(); }
 
 private:
     void abortNotInLoopThread();
+    void doPendingCallbacks();
 
 private:
-    static const int kPollTimeMs;
+    static constexpr int kPollTimeMs = 10000;   /// 10 seconds;
 
 private:
     std::thread::id tid_;
@@ -55,9 +80,16 @@ private:
 
     Timestamp pollReturnTime_;
     std::unique_ptr<EPoller> poller_;
+    ChannelList activeChannels_;    /// active channels that returned from poller.
 
-    ChannelList activeChannels_;        // active channels that returned from poller.
-    Channel* currentActiveChannel_;     // the active channel currently being processed.
+    std::unique_ptr<TimerQueue> timerQueue_;    /// Life time is managed by EventLoop.
+
+    std::mutex mutex_;
+    std::vector<Callback> pendingCallbacks_;    /// Guarded by mutex_.
+    bool callingPendingCallbacks_;
+
+    int eventFd_;                               /// Used by eventfd.
+    std::unique_ptr<Channel> eventFdChannel_;   /// Life time is managed by EventLoop.
 };
 
 NAMESPACE_END(net)

@@ -27,8 +27,8 @@ NAMESPACE_BEGIN(tento)
 /// @endcode
 class Buffer : public Copyable {
 public:
-    static const size_t kCheapPrependSize;
-    static const size_t kInitialSize;
+    static constexpr size_t kCheapPrependSize = 8;
+    static constexpr size_t kInitialSize = 1024;
 
 public:
     explicit Buffer(size_t initialSize = kInitialSize,
@@ -183,7 +183,7 @@ private:
     size_t readIndex_;
     size_t writeIndex_;
 
-    static const char kCRLF[];
+    static constexpr char kCRLF[] = "\r\n";
 };
 
 NAMESPACE_END(tento)

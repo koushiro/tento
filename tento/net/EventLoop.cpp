@@ -4,16 +4,43 @@
 
 #include "tento/net/EventLoop.hpp"
 
+#include <sys/eventfd.h>
+
 #include "tento/base/Logger.hpp"
 #include "tento/net/Channel.hpp"
 #include "tento/net/EPoller.hpp"
+#include "tento/net/TimerQueue.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-__thread EventLoop* loopInThisThread = nullptr;
+int EventFdCreate() {
+    int evtfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (evtfd == -1) {
+        LOG_ERROR("EventFdCreate failed, "
+                  "an error '{}' occurred", strerror(errno));
+        abort();
+    }
+    return evtfd;
+}
 
-const int EventLoop::kPollTimeMs = 10000;   // 10 seconds
+void EventFdWrite(int eventFd) {
+    uint64_t one = 1;
+    ssize_t n = write(eventFd, &one, sizeof(one));
+    if (n != sizeof(one)) {
+        LOG_ERROR("EventFdWrite() writes {} bytes instead of 8", n);
+    }
+}
+
+void EventFdRead(int eventFd) {
+    uint64_t one = 1;
+    ssize_t n = read(eventFd, &one, sizeof(one));
+    if (n != sizeof(one)) {
+        LOG_ERROR("EventFdRead() reads {} bytes instead of 8", n);
+    }
+}
+
+__thread EventLoop* tEventLoop = nullptr;
 
 EventLoop::EventLoop()
     : tid_(std::this_thread::get_id()),
@@ -21,50 +48,74 @@ EventLoop::EventLoop()
       quit_(false),
       eventHandling_(false),
       poller_(std::make_unique<EPoller>(this)),
-      currentActiveChannel_(nullptr)
+      activeChannels_(),
+      timerQueue_(std::make_unique<TimerQueue>(this)),
+      mutex_(),
+      pendingCallbacks_(),
+      callingPendingCallbacks_(false),
+      eventFd_(EventFdCreate()),
+      eventFdChannel_(std::make_unique<Channel>(this, eventFd_))
 {
     LOG_TRACE("EventLoop Created {} in thread {}", (void*)this, tid_);
-    if (loopInThisThread) {
+    if (tEventLoop) {
         LOG_FATAL("Another EventLoop {} exists in this thread {}",
-                     (void*)loopInThisThread, tid_);
+                  (void*)tEventLoop, tid_);
     } else {
-        loopInThisThread = this;
+        tEventLoop = this;
     }
+
+    eventFdChannel_->SetReadCallback([&]() { EventFdRead(eventFd_); });
+    eventFdChannel_->EnableReadEvent();
 }
 
 EventLoop::~EventLoop() {
-    loopInThisThread = nullptr;
+    assert(tEventLoop == this);
+    tEventLoop = nullptr;
 }
 
-void EventLoop::Loop() {
+void EventLoop::Run() {
     assert(!looping_);
     AssertInLoopThread();
+
     looping_ = true;
     LOG_TRACE("EventLoop {} start looping", (void*)this);
 
     while (!quit_) {
         activeChannels_.clear();
-
         pollReturnTime_ = poller_->Poll(kPollTimeMs, &activeChannels_);
-
-        // TODO sort channel by priority
+        /// TODO sort channel by priority
         eventHandling_ = true;
         for (auto channel : activeChannels_) {
-            currentActiveChannel_ = channel;
-            currentActiveChannel_->HandleEvent(pollReturnTime_);
+            channel->HandleEvent(pollReturnTime_);
         }
-        currentActiveChannel_ = nullptr;
         eventHandling_ = false;
+        /// Do pending callbacks from QueueInLoop().
+        /// Could do some computing work in I/O thread.
+        doPendingCallbacks();
     }
 
     LOG_TRACE("EventLoop {} stop looping", (void*)this);
     looping_ = false;
 }
 
+void EventLoop::doPendingCallbacks() {
+    std::vector<Callback> callbacks;
+    callingPendingCallbacks_ = true;
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        callbacks.swap(pendingCallbacks_);
+    }
+    for (const auto& callback : callbacks) {
+        callback();
+    }
+    callingPendingCallbacks_ = false;
+}
+
 void EventLoop::Quit() {
+    assert(!quit_);
     quit_ = true;
     if (!IsInLoopThread()) {
-        // wakeup
+        WakeUp();
     }
 }
 
@@ -78,12 +129,53 @@ void EventLoop::RemoveChannel(Channel* channel) {
     assert(channel->OwnerLoop() == this);
     AssertInLoopThread();
     if (eventHandling_) {
-        assert(currentActiveChannel_ == channel ||
-            std::find(activeChannels_.begin(), activeChannels_.end(), channel)
-            == activeChannels_.end()
-        );
+        assert(std::find(activeChannels_.begin(), activeChannels_.end(), channel)
+            == activeChannels_.end());
     }
     poller_->RemoveChannel(channel);
+}
+
+void EventLoop::WakeUp() {
+    EventFdWrite(eventFd_);
+}
+
+void EventLoop::RunInLoop(Callback cb) {
+    if (IsInLoopThread()) {
+        cb();
+    } else {
+        QueueInLoop(std::move(cb));
+    }
+}
+
+void EventLoop::QueueInLoop(Callback cb) {
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        pendingCallbacks_.push_back(std::move(cb));
+    }
+    /// The thread that had called QueueInLoop is not current I/O thread,
+    /// or is current I/O thread but current I/O thread is calling pending callbacks.
+    /// In above condition, we need to wakeup I/O thread.
+    if (!IsInLoopThread() || callingPendingCallbacks_) {
+        WakeUp();
+    }
+}
+
+TimerId EventLoop::RunAt(Timestamp time, TimerCallback cb) {
+    return timerQueue_->AddTimer(time, Duration(0, 0), std::move(cb));
+}
+
+TimerId EventLoop::RunAfter(Duration delay, TimerCallback cb) {
+    return timerQueue_->AddTimer(Timestamp::Now() + delay,
+                                 Duration(0, 0), std::move(cb));
+}
+
+TimerId EventLoop::RunEvery(Duration interval, TimerCallback cb) {
+    return timerQueue_->AddTimer(Timestamp::Now() + interval,
+                                 interval, std::move(cb));
+}
+
+void EventLoop::CancelTimer(TimerId timerId) {
+    timerQueue_->CancelTimer(timerId);
 }
 
 void EventLoop::abortNotInLoopThread() {

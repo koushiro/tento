@@ -31,12 +31,12 @@ private:
     void epollControl(int op, Channel* channel);
 
 public:
-    static const int kNew;
-    static const int kAdded;
-    static const int kDeleted;
+    static constexpr int kNew = -1;
+    static constexpr int kAdded = 1;
+    static constexpr int kDeleted = 2;
 
 private:
-    static const size_t kInitEventListSize;
+    static constexpr size_t kInitEventListSize = 16;
 
     EventLoop* ownerLoop_;
     int epfd_;

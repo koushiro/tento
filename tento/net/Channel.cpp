@@ -4,8 +4,6 @@
 
 #include "tento/net/Channel.hpp"
 
-#include <sys/epoll.h>
-
 #include <cassert>
 #include <sstream>
 #include <string>
@@ -15,16 +13,12 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-const int Channel::kNoneEvent = 0;
-const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
-const int Channel::kWriteEvent = EPOLLOUT;
-
 Channel::Channel(EventLoop* loop, int fd)
     : ownerLoop_(loop),
       fd_(fd),
       events_(0),
       revents_(0),
-      status_(-1),
+      status_(-1),          /// EPoller::kNew
       logHup_(true),
       tied_(false),
       eventHandling_(false)
@@ -84,8 +78,7 @@ std::string Channel::EventsToString() const {
     return eventsToString(fd_, events_);
 }
 
-std::string Channel::eventsToString(int fd, int ev)
-{
+std::string Channel::eventsToString(int fd, int ev) {
     std::ostringstream oss;
     oss << fd << ": ";
     if (ev & EPOLLIN)

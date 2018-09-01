@@ -9,10 +9,12 @@
 #include <memory>
 #include <vector>
 
+#include <sys/epoll.h>
+
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
 #include "tento/base/Timestamp.hpp"
-#include "tento/net/Callbacks.hpp"
+#include "tento/net/Alias.hpp"
 #include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
@@ -76,9 +78,9 @@ private:
     static std::string eventsToString(int fd, int ev);
 
 private:
-    static const int kNoneEvent;
-    static const int kReadEvent;
-    static const int kWriteEvent;
+    static constexpr int kNoneEvent = 0;
+    static constexpr int kReadEvent = EPOLLIN | EPOLLPRI;
+    static constexpr int kWriteEvent = EPOLLIN | EPOLLPRI;
 
 private:
     EventLoop*  ownerLoop_; /// The EventLoop to which the channel belongs.

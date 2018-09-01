@@ -14,13 +14,14 @@ NAMESPACE_BEGIN(tento)
 
 class Duration : public Copyable {
 public:
-    static const uint32_t NANOS_PER_MICRO;  /// 1'000
-    static const uint32_t NANOS_PER_MILLI;  /// 1'000'000
-    static const uint32_t NANOS_PER_SEC;    /// 1'000'000'000
-    static const uint32_t MILLIS_PER_SEC;   /// 1'000
-    static const uint32_t MICROS_PER_SEC;   /// 1'000'000
-    static const uint32_t SECS_PER_MIN;     /// 60
-    static const uint32_t SECS_PER_HOUR;    /// 3600
+    /// C++14 number delimiter
+    static constexpr uint32_t NANOS_PER_MICRO = 1'000;
+    static constexpr uint32_t NANOS_PER_MILLI = 1'000'000;
+    static constexpr uint32_t NANOS_PER_SEC = 1'000'000'000;
+    static constexpr uint32_t MILLIS_PER_SEC = 1'000;
+    static constexpr uint32_t MICROS_PER_SEC = 1'000'000;
+    static constexpr uint32_t SECS_PER_MIN = 60;
+    static constexpr uint32_t SECS_PER_HOUR = 3600;
 
 public:
     Duration() : secs_(0), nanos_(0) {}
@@ -62,19 +63,18 @@ public:
 
     /// Returns the number of whole seconds contained by this Duration.
     ///
-    /// The returned value does not include the fractional (nanosecond) part
-    /// of the duration, which can be obtained using NanosPart.
+    /// The returned value does not include the
+    /// fractional (nanosecond/microsecond/millisecond) part of the duration,
+    /// which can be obtained using 'SubSecNanos/SubSecMicros/SubSecMillis'.
     uint64_t SecsPart()     const { return secs_; }
     /// Returns the fractional part of this `Duration`, in nanoseconds.
-    uint32_t NanosPart()    const { return nanos_; }
+    uint32_t SubSecNanos()  const { return nanos_; }
     /// Returns the fractional part of this Duration, in microseconds.
-    uint32_t MicrosPart()   const { return nanos_ / NANOS_PER_MICRO; }
+    uint32_t SubSecMicros() const { return nanos_ / NANOS_PER_MICRO; }
     /// Returns the fractional part of this Duration, in milliseconds.
-    uint32_t MilliPart()    const { return nanos_ / NANOS_PER_MILLI; }
+    uint32_t SubSecMillis() const { return nanos_ / NANOS_PER_MILLI; }
 
-    bool IsZero() const {
-        return secs_ == 0 && nanos_ == 0;
-    }
+    bool IsZero() const { return secs_ == 0 && nanos_ == 0; }
 
     double AsMicros() const {
         return secs_ * MICROS_PER_SEC +
@@ -182,13 +182,5 @@ inline Duration operator/ (const Duration& lhs, int n) {
     d /= n;
     return d;
 }
-
-const uint32_t Duration::NANOS_PER_MICRO = 1'000;
-const uint32_t Duration::NANOS_PER_MILLI = 1'000'000;
-const uint32_t Duration::NANOS_PER_SEC = 1'000'000'000;
-const uint32_t Duration::MILLIS_PER_SEC = 1'000;
-const uint32_t Duration::MICROS_PER_SEC = 1'000'000;
-const uint32_t Duration::SECS_PER_MIN = 60;
-const uint32_t Duration::SECS_PER_HOUR = 3600;
 
 NAMESPACE_END(tento)

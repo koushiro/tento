@@ -10,9 +10,7 @@ set(TENTO_BASE
         tento/base/Duration.hpp
         tento/base/Timestamp.hpp
         tento/base/Logger.hpp
-        tento/base/Logger.cpp
-        tento/base/CountDownLatch.hpp
-        )
+        tento/base/CountDownLatch.hpp)
 
 set(TENTO_NET
         tento/net/Buffer.cpp
@@ -38,8 +36,8 @@ set(TENTO_NET
         tento/net/Acceptor.hpp
         tento/net/Connector.cpp
         tento/net/Connector.hpp
-        tento/net/Callbacks.hpp
-        )
+        tento/net/Alias.hpp
+        tento/net/Timer.cpp)
 
 set(TENTO_NET_TCP
         tento/net/tcp/TcpConnection.cpp

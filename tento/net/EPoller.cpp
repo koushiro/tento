@@ -11,12 +11,6 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-const int EPoller::kNew = -1;
-const int EPoller::kAdded = 1;
-const int EPoller::kDeleted = 2;
-
-const size_t EPoller::kInitEventListSize = 16;
-
 EPoller::EPoller(EventLoop* loop)
     : ownerLoop_(loop),
       epfd_(epoll_create1(EPOLL_CLOEXEC)),

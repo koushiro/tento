@@ -12,45 +12,23 @@
 #include "tento/base/Duration.hpp"
 #include "tento/base/NonCopyable.hpp"
 #include "tento/base/Timestamp.hpp"
-#include "tento/net/Callbacks.hpp"
+#include "tento/net/Alias.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 class Timer : public NonCopyable {
 public:
-    Timer(Timestamp when, Duration interval, TimerCallback cb)
-    : id_(++counter_),
-      expiration_(when),
-      interval_(interval),
-      periodic_(!interval.IsZero()),
-      callback_(std::move(cb))
-    {}
-    ~Timer() = default;
+    Timer(Timestamp when, Duration interval, TimerCallback cb);
+    ~Timer();
 
-    void Start() const {
-        callback_();
-    }
+    void Start() const;
+    void Restart(Timestamp now);
 
-    void Cancel() {
-
-    }
-
-    void Restart(Timestamp now) {
-        if (periodic_) {
-            expiration_ = now + interval_;
-        } else {
-            expiration_ = Timestamp::Invalid();
-        }
-    }
-
-    uint64_t Id() const { return id_; }
-
-    Timestamp Expiration() const { return expiration_; }
-
-    bool operator< (const Timer& rhs) const {
-        return expiration_ < rhs.expiration_;
-    }
+    uint64_t Id()                 const { return id_; }
+    Timestamp Expiration()        const { return expiration_; }
+    bool IsExpired(Timestamp now) const { return now >= expiration_; }
+    bool IsPeriodic()             const { return periodic_; }
 
 private:
     static std::atomic_uint64_t counter_;
@@ -61,10 +39,6 @@ private:
     bool periodic_;         /// The flag that whether the timer is periodic.
     TimerCallback callback_;
 };
-
-std::atomic_uint64_t Timer::counter_(0);
-
-//using TimerPtr = std::unique_ptr<Timer>;
 
 NAMESPACE_END(net)
 NAMESPACE_END(tento)

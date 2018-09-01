@@ -18,6 +18,8 @@ public:
 
     static Timestamp Invalid() { return Timestamp(); }
 
+    bool IsValid() const { return nanos_ > 0; }
+
     static Timestamp Now() {
         using Nanoseconds = std::chrono::nanoseconds;
         using Clock = std::chrono::high_resolution_clock;
@@ -59,13 +61,13 @@ public:
 
     // Maybe overflow
     Timestamp& operator+=(const Duration& dur) {
-        auto nanos = dur.SecsPart() * Duration::NANOS_PER_SEC + dur.NanosPart();
+        auto nanos = dur.SecsPart() * Duration::NANOS_PER_SEC + dur.SubSecNanos();
         nanos_ += nanos;
         return *this;
     }
 
     Timestamp& operator-=(const Duration& dur) {
-        auto nanos = dur.SecsPart() * Duration::NANOS_PER_SEC + dur.NanosPart();
+        auto nanos = dur.SecsPart() * Duration::NANOS_PER_SEC + dur.SubSecNanos();
         assert(nanos_ > nanos);
         nanos_ -= nanos;
         return *this;

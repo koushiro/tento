@@ -5,6 +5,7 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 #include "tento/base/Common.hpp"
 
@@ -16,6 +17,12 @@ using Callback = std::function<void()>;
 using TimerCallback = std::function<void()>;
 
 using EventCallback = std::function<void()>;
+
+class Channel;
+using ChannelList = std::vector<Channel*>;
+
+class Timer;
+using TimerId = std::pair<uint64_t, Timer*>;
 
 NAMESPACE_END(net)
 NAMESPACE_END(tento)
