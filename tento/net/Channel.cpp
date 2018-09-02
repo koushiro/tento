@@ -20,7 +20,7 @@ Channel::Channel(EventLoop* loop, int fd)
       revents_(0),
       status_(-1),          /// EPoller::kNew
       logHup_(true),
-      tied_(false),
+//      tied_(false),
       eventHandling_(false)
 {
 }
@@ -65,10 +65,10 @@ void Channel::Remove() {
 }
 
 //
-void Channel::Tie(const std::shared_ptr<void>& obj) {
-    tie_ = obj;
-    tied_ = true;
-}
+//void Channel::Tie(const std::shared_ptr<void>& obj) {
+//    tie_ = obj;
+//    tied_ = true;
+//}
 
 std::string Channel::ReventsToString() const {
     return eventsToString(fd_, revents_);

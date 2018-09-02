@@ -74,7 +74,7 @@ private:
 private:
     std::thread::id tid_;
 
-    std::atomic_bool looping_;
+    bool looping_;
     std::atomic_bool quit_;
     std::atomic_bool eventHandling_;
 

@@ -40,7 +40,7 @@ private:
 
 public:
     ///
-    void Tie(const std::shared_ptr<void>&);
+//    void Tie(const std::shared_ptr<void>&);
 
 public:
     bool IsNoneEvent() const { return events_ == kNoneEvent; }
@@ -90,8 +90,8 @@ private:
     int         status_;    /// For EPoller.
     bool        logHup_;    /// For EPOLLHUP
 
-    std::weak_ptr<void> tie_;
-    bool                tied_;
+//    std::weak_ptr<void> tie_;
+//    bool                tied_;
 
     bool          eventHandling_; /// The flag whether is currently in the event handling.
     EventCallback readCallback_;

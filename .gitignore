@@ -1,2 +1,12 @@
-/cmake-build-debug
 /.idea
+/cmake-build-debug
+
+/build
+
+/tento/CMakeFiles
+/tento/cmake_install.cmake
+/tento/Makefile
+
+/tests/CMakeFiles
+/tests/cmake_install.cmake
+/tests/Makefile

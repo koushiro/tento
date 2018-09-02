@@ -100,6 +100,7 @@ void EventLoop::Run() {
 
 void EventLoop::doPendingCallbacks() {
     std::vector<Callback> callbacks;
+    /// Reduce critical area, avoid deadlock (callback maybe call QueueInLoop).
     callingPendingCallbacks_ = true;
     {
         std::unique_lock<std::mutex> lock(mutex_);
