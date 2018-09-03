@@ -34,9 +34,14 @@ public:
         }
     }
 
+    int GetCount() const {
+        std::unique_lock<std::mutex> lock(mutex_);
+        return count_;
+    }
+
 private:
     int count_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::condition_variable cond_;
 };
 

@@ -58,8 +58,8 @@ EventLoop::EventLoop()
 {
     LOG_TRACE("EventLoop Created {} in thread {}", (void*)this, tid_);
     if (tEventLoop) {
-        LOG_FATAL("Another EventLoop {} exists in this thread {}",
-                  (void*)tEventLoop, tid_);
+        LOG_CRITICAL("Another EventLoop {} exists in this thread {}",
+                     (void*)tEventLoop, tid_);
     } else {
         tEventLoop = this;
     }
@@ -180,7 +180,7 @@ void EventLoop::CancelTimer(TimerId timerId) {
 }
 
 void EventLoop::abortNotInLoopThread() {
-    LOG_FATAL("EventLoop::abortNotInLoopThread - "
+    LOG_CRITICAL("EventLoop::abortNotInLoopThread - "
                  "EventLoop {} was created in tid = {}, current tid = {}",
                  (void*)this, tid_, std::this_thread::get_id());
 }

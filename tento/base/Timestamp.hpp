@@ -38,7 +38,7 @@ public:
         return Duration::FromNanos(ns);
     }
 
-    Duration Elapsed() { return DurationSince(Now()); }
+    Duration Elapsed() { return Now().DurationSince(*this); }
 
     bool operator==(const Timestamp& rhs) const {
         return nanos_ == rhs.nanos_;
@@ -73,6 +73,8 @@ public:
         return *this;
     }
 
+    friend std::ostream& operator<<(std::ostream& os, const Timestamp& timestamp);
+
 private:
     /// ns_ gives the number of nanoseconds elapsed since the Epoch
     /// 1970-01-01 00:00:00 +0000 (UTC).
@@ -89,6 +91,11 @@ inline Timestamp operator-(const Timestamp& when, const Duration& dur) {
     Timestamp time = when;
     time -= dur;
     return time;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Timestamp& timestamp) {
+    os << "Timestamp { nanos: " << timestamp.nanos_ << " }";
+    return os;
 }
 
 NAMESPACE_END(tento)

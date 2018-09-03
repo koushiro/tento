@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <cassert>
+#include <ostream>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/Copyable.hpp"
@@ -76,6 +77,10 @@ public:
 
     bool IsZero() const { return secs_ == 0 && nanos_ == 0; }
 
+    /// Maybe overflow
+    uint64_t AsNanos() const {
+        return secs_ * NANOS_PER_SEC + nanos_;
+    }
     double AsMicros() const {
         return secs_ * MICROS_PER_SEC +
             static_cast<double>(nanos_) / NANOS_PER_MICRO;
@@ -150,6 +155,8 @@ public:
         return *this;
     }
 
+    friend std::ostream& operator<<(std::ostream& os, const Duration& duration);
+
 private:
     uint64_t secs_;     /// seconds
     uint32_t nanos_;    /// nanoseconds
@@ -181,6 +188,12 @@ inline Duration operator/ (const Duration& lhs, int n) {
     Duration d = lhs;
     d /= n;
     return d;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Duration& duration) {
+    os << "Duration { secs: " << duration.secs_
+        << ", nanos: " << duration.nanos_ << " }";
+    return os;
 }
 
 NAMESPACE_END(tento)

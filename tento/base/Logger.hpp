@@ -21,6 +21,7 @@ NAMESPACE_BEGIN(tento)
 
 #define LOGGER_NAME "tento"
 
+/// console log level - trace;  file log level - info.
 class Logger : public NonCopyable {
 public:
     enum class LogKind {
@@ -29,7 +30,7 @@ public:
         Both,
     };
 
-    Logger(LogKind kind) {
+    explicit Logger(LogKind kind) {
         switch (kind) {
             case LogKind::Console:   InitConsoleLogger(); break;
             case LogKind::BasicFile: InitBasicLogger();   break;
@@ -117,7 +118,7 @@ private:
     spdlog::get(LOGGER_NAME)->warn(__VA_ARGS__)
 #define LOG_ERROR(...) \
     spdlog::get(LOGGER_NAME)->error(__VA_ARGS__)
-#define LOG_FATAL(...) \
+#define LOG_CRITICAL(...) \
     spdlog::get(LOGGER_NAME)->critical(__VA_ARGS__)
 
 NAMESPACE_END(tento)
