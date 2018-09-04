@@ -16,15 +16,18 @@ NAMESPACE_BEGIN(net)
 
 int EventFdCreate() {
     int evtfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    LOG_TRACE("EventFdCreate, fd = {}", evtfd);
     if (evtfd == -1) {
-        LOG_ERROR("EventFdCreate failed, "
-                  "an error '{}' occurred", strerror(errno));
+        auto errorCode = errno;
+        LOG_CRITICAL("EventFdCreate - eventfd() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
         abort();
     }
     return evtfd;
 }
 
 void EventFdWrite(int eventFd) {
+    LOG_TRACE("EventFdWrite, fd = {}", eventFd);
     uint64_t one = 1;
     ssize_t n = write(eventFd, &one, sizeof(one));
     if (n != sizeof(one)) {
@@ -33,6 +36,7 @@ void EventFdWrite(int eventFd) {
 }
 
 void EventFdRead(int eventFd) {
+    LOG_TRACE("EventFdRead, fd = {}", eventFd);
     uint64_t one = 1;
     ssize_t n = read(eventFd, &one, sizeof(one));
     if (n != sizeof(one)) {
@@ -43,10 +47,10 @@ void EventFdRead(int eventFd) {
 __thread EventLoop* tEventLoop = nullptr;
 
 EventLoop::EventLoop()
-    : tid_(std::this_thread::get_id()),
+    : tid_(thread_id()),
       looping_(false),
-      quit_(false),
       eventHandling_(false),
+      quit_(false),
       poller_(std::make_unique<EPoller>(this)),
       activeChannels_(),
       timerQueue_(std::make_unique<TimerQueue>(this)),
@@ -56,7 +60,7 @@ EventLoop::EventLoop()
       eventFd_(EventFdCreate()),
       eventFdChannel_(std::make_unique<Channel>(this, eventFd_))
 {
-    LOG_TRACE("EventLoop Created {} in thread {}", (void*)this, tid_);
+    LOG_TRACE("EventLoop {} was created in thread {}", (void*)this, tid_);
     if (tEventLoop) {
         LOG_CRITICAL("Another EventLoop {} exists in this thread {}",
                      (void*)tEventLoop, tid_);
@@ -69,6 +73,11 @@ EventLoop::EventLoop()
 }
 
 EventLoop::~EventLoop() {
+    LOG_DEBUG("EventLoop {} of thread {} destructs in thread {}",
+              (void*)this, tid_, thread_id());
+    eventFdChannel_->DisableAllEvents();
+    eventFdChannel_->Remove();
+    close(eventFd_);
     assert(tEventLoop == this);
     tEventLoop = nullptr;
 }
@@ -182,7 +191,7 @@ void EventLoop::CancelTimer(TimerId timerId) {
 void EventLoop::abortNotInLoopThread() {
     LOG_CRITICAL("EventLoop::abortNotInLoopThread - "
                  "EventLoop {} was created in tid = {}, current tid = {}",
-                 (void*)this, tid_, std::this_thread::get_id());
+                 (void*)this, tid_, thread_id());
 }
 
 NAMESPACE_END(net)

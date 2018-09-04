@@ -12,6 +12,7 @@ set(TENTO_BASE
         base/Timestamp.hpp
         base/Logger.hpp
         base/CountDownLatch.hpp
+        base/OS.hpp
         )
 
 set(TENTO_NET
@@ -34,8 +35,8 @@ set(TENTO_NET
         net/Buffer.hpp
         net/Socket.cpp
         net/Socket.hpp
-#        net/Acceptor.cpp
-#        net/Acceptor.hpp
+        net/Acceptor.cpp
+        net/Acceptor.hpp
 #        net/Connector.cpp
 #        net/Connector.hpp
         )

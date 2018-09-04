@@ -80,7 +80,7 @@ std::string Channel::EventsToString() const {
 
 std::string Channel::eventsToString(int fd, int ev) {
     std::ostringstream oss;
-    oss << fd << ": ";
+    oss << fd << " : ";
     if (ev & EPOLLIN)
         oss << "IN ";
     if (ev & EPOLLPRI)

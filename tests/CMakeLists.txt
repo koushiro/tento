@@ -4,6 +4,7 @@ include_directories(${PROJECT_SOURCE_DIR}/deps/spdlog/include)
 include_directories(${PROJECT_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 
+# Base classes tests
 add_executable(base_logger_test base_logger_test.cpp)
 target_link_libraries(base_logger_test tento)
 
@@ -15,3 +16,16 @@ target_link_libraries(base_timestamp_test tento)
 
 add_executable(base_count_down_latch_test base_count_down_latch_test.cpp)
 target_link_libraries(base_count_down_latch_test tento)
+
+# Net -- Reactor classes tests.
+add_executable(net_event_loop_test net_event_loop_test.cpp)
+target_link_libraries(net_event_loop_test tento)
+
+add_executable(net_timer_test net_timer_test.cpp)
+target_link_libraries(net_timer_test tento)
+
+add_executable(net_event_loop_thread_test net_event_loop_thread_test.cpp)
+target_link_libraries(net_event_loop_thread_test tento)
+
+add_executable(net_acceptor_test net_acceptor_test.cpp)
+target_link_libraries(net_acceptor_test tento)

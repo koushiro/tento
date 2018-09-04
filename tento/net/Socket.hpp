@@ -19,12 +19,14 @@ NAMESPACE_BEGIN(net)
 /// Wrapper of sockaddr_in
 class SockAddr : public Copyable {
 public:
-    explicit SockAddr(uint16_t port, bool loopback = false);
+    explicit SockAddr(uint16_t port = 0, bool loopback = false);
     explicit SockAddr(const struct sockaddr_in addr) : addr_(addr) {}
     SockAddr(const std::string& ip, uint16_t port);
     ~SockAddr() = default;
     SockAddr(const SockAddr&) = default;
     SockAddr& operator=(const SockAddr&) = default;
+
+    void SetSockAddr(const struct sockaddr_in& addr) { addr_ = addr; }
 
     const struct sockaddr* GetRaw() const {
         return static_cast<const struct sockaddr*>(
@@ -37,6 +39,8 @@ public:
             static_cast<void*>(&addr_)
         );
     }
+
+    sa_family_t GetFamily() const { return addr_.sin_family; }
 
     std::string ToIp() const;
     uint16_t ToPort() const;
@@ -51,6 +55,14 @@ class Socket : public NonCopyable {
 public:
     explicit Socket(int sockFd) : sockFd_(sockFd) {}
     ~Socket() { close(sockFd_); }
+    Socket(Socket&& rhs) noexcept : sockFd_(rhs.sockFd_) { rhs.sockFd_ = -1; }
+    Socket& operator=(Socket&& rhs) noexcept {
+        if (this != &rhs) {
+            sockFd_ = rhs.sockFd_;
+            rhs.sockFd_ = -1;
+        }
+        return *this;
+    }
 
     const int Fd() const { return sockFd_; }
 
@@ -69,7 +81,7 @@ public:
     void SetKeepAlive(bool on);
 
 private:
-    const int sockFd_;
+    int sockFd_;
 };
 
 NAMESPACE_END(net)

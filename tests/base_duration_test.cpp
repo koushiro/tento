@@ -3,9 +3,12 @@
 //
 
 #include "tento/base/Duration.hpp"
+#include "tento/base/Logger.hpp"
+
 using namespace tento;
 
 int main() {
+    Logger logger(Logger::LogKind::Both);
     Duration duration = Duration(0, 0);
     assert(duration.IsZero());
 

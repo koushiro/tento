@@ -49,7 +49,7 @@ public:
 
     void EnableReadEvent()   { events_ |=  kReadEvent;  update(); }
     void DisableReadEvent()  { events_ &= ~kReadEvent;  update(); }
-    void EnableWriteEvent()  { events_ !=  kWriteEvent; update(); }
+    void EnableWriteEvent()  { events_ |=  kWriteEvent; update(); }
     void DisableWriteEvent() { events_ &= ~kWriteEvent; update(); }
     void DisableAllEvents()  { events_ =   kNoneEvent;  update(); }
 

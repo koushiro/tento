@@ -17,8 +17,10 @@ EPoller::EPoller(EventLoop* loop)
       events_(kInitEventListSize)
 {
     if (epfd_ == -1) {
-        LOG_ERROR("EPoller::EPoller epoll_create1 failed, "
-                  "an error '{}' occurred", strerror(errno));
+        auto errorCode = errno;
+        LOG_CRITICAL("EPoller::EPoller - epoll_create1() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+        abort();
     }
 }
 
@@ -33,8 +35,9 @@ Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
                                timeoutMs);
     Timestamp now = Timestamp::Now();
     if (numReadyFd == -1) {
-        LOG_ERROR("EPoller::Poll() -- epoll_wait(), "
-                  "an error '{}' occurred", strerror(errno));
+        auto errorCode = errno;
+        LOG_ERROR("EPoller::Poll - epoll_wait() failed, "
+                  "an error '{}' occurred", strerror(errorCode));
     } else if (numReadyFd == 0) {
         LOG_TRACE("Nothing happened", numReadyFd == 0);
     } else {
@@ -57,8 +60,8 @@ Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
 void EPoller::UpdateChannel(Channel* channel) {
     int status = channel->Status();
     LOG_TRACE("UpdateChannel, fd = {}, events = {}, status = {}",
-              channel->Fd(), channel->Events(), status);
-    if (status == kNew || kDeleted) {
+              channel->Fd(), channel->EventsToString(), status);
+    if (status == kNew || status == kDeleted) {
         // New channel, add the new channel to events_ with EPOLL_CTL_ADD.
         if (status == kNew) {
             assert(channels_.find(channel->Fd()) == channels_.end());
@@ -110,8 +113,9 @@ void EPoller::epollControl(int op, Channel* channel) {
               op, channel->Fd(), channel->EventsToString());
     int ret = epoll_ctl(epfd_, op, channel->Fd(), &event);
     if (ret == -1) {
-        LOG_ERROR("EPoller::epollControl() -- epoll_ctl(), "
-                  "an error '{}' occurred", strerror(errno));
+        auto errorCode = errno;
+        LOG_CRITICAL("EPoller::epollControl - epoll_ctl() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
     }
 }
 

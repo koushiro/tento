@@ -54,8 +54,8 @@ private:
     void InitBasicLogger() {
         try {
             auto logger = spdlog::basic_logger_mt<spdlog::async_factory>(
-            LOGGER_NAME,
-            "tento.log"
+                LOGGER_NAME,
+                "tento.log"
             );
             logger->set_level(spdlog::level::info);
             logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
@@ -73,23 +73,24 @@ private:
             auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             console_sink->set_level(spdlog::level::trace);
 
+            /// write log into file in 'wb' mode.
             auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("tento.log", true);
             file_sink->set_level(spdlog::level::info);
 
             std::vector<spdlog::sink_ptr> sinks {console_sink, file_sink};
 
             auto logger = std::make_shared<spdlog::async_logger>(
-            LOGGER_NAME,
-            sinks.begin(), sinks.end(),
-            spdlog::thread_pool(),
-            spdlog::async_overflow_policy::overrun_oldest
+                LOGGER_NAME,
+                sinks.begin(), sinks.end(),
+                spdlog::thread_pool(),
+                spdlog::async_overflow_policy::overrun_oldest
             );
             logger->set_level(spdlog::level::trace);
             logger->set_pattern("[%Y-%m-%d %T.%e] [%l] [tid=%t] %v");
 
-            spdlog::register_logger(logger);
-
             logger->info(">>>>>>>>>>> Start Console & Basic-File logging <<<<<<<<<<<");
+
+            spdlog::register_logger(logger);
 
         } catch (spdlog::spdlog_ex& ex) {
             std::cout <<  "Log initialization failed: " << ex.what() << std::endl;

@@ -14,14 +14,18 @@ NAMESPACE_BEGIN(net)
 
 int TimerFdCreate() {
     int timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
+    LOG_TRACE("TimerFdCreate, fd = {}", timerfd);
     if (timerfd == -1) {
-        LOG_ERROR("timerfd_create failed, "
-                  "an error '{}' occurred", strerror(errno));
+        auto errorCode = errno;
+        LOG_CRITICAL("TimerFdCreate - timerfd_create() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+        abort();
     }
     return timerfd;
 }
 
 void TimerFdSet(int timerfd, Timestamp when) {
+    LOG_TRACE("TimerFdSet, fd = {}", timerfd);
     // wake up event loop by timerfd_settime()
     struct itimerspec newValue, oldValue;
     memset(&newValue, 0, sizeof(newValue));
@@ -33,12 +37,14 @@ void TimerFdSet(int timerfd, Timestamp when) {
     newValue.it_value = ts;
     int ret = timerfd_settime(timerfd, 0, &newValue, &oldValue);
     if (ret == -1) {
-        LOG_ERROR("timerfd_settime failed, "
-                  "an error '{}' occurred", strerror(errno));
+        auto errorCode = errno;
+        LOG_CRITICAL("TimerFdSet - timerfd_settime() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
     }
 }
 
 void TimerFdRead(int timerfd) {
+    LOG_TRACE("TimerFdRead, fd = {}", timerfd);
     uint64_t howmany;
     ssize_t n = read(timerfd, &howmany, sizeof(howmany));
     if (n != sizeof(howmany)) {

@@ -12,6 +12,7 @@
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
+#include "tento/base/OS.hpp"
 #include "tento/base/Timestamp.hpp"
 #include "tento/net/Alias.hpp"
 
@@ -62,7 +63,7 @@ public:
 
 public:
     void AssertInLoopThread() { if (!IsInLoopThread()) { abortNotInLoopThread(); } }
-    bool IsInLoopThread() const { return tid_ == std::this_thread::get_id(); }
+    bool IsInLoopThread() const { return tid_ == thread_id(); }
 
 private:
     void abortNotInLoopThread();
@@ -72,11 +73,11 @@ private:
     static constexpr int kPollTimeMs = 10000;   /// 10 seconds;
 
 private:
-    std::thread::id tid_;
+    size_t tid_;    /// consistent with spdlog thread id format, see OS.h.
 
-    bool looping_;
-    std::atomic_bool quit_;
+    std::atomic_bool looping_;
     std::atomic_bool eventHandling_;
+    std::atomic_bool quit_;
 
     Timestamp pollReturnTime_;
     std::unique_ptr<EPoller> poller_;
@@ -86,7 +87,7 @@ private:
 
     std::mutex mutex_;
     std::vector<Callback> pendingCallbacks_;    /// Guarded by mutex_.
-    bool callingPendingCallbacks_;
+    std::atomic_bool callingPendingCallbacks_;
 
     int eventFd_;                               /// Used by eventfd.
     std::unique_ptr<Channel> eventFdChannel_;   /// Life time is managed by EventLoop.

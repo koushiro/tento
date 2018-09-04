@@ -10,6 +10,8 @@
 #include <cstring>
 #include <cassert>
 
+#include "tento/base/Logger.hpp"
+
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
@@ -49,55 +51,114 @@ std::string SockAddr::ToIpAndPort() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void Socket::Bind(const SockAddr& serverAddr) {
-    socklen_t addrLen = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+    auto addrLen = static_cast<socklen_t>(sizeof(struct sockaddr_in));
     int ret = bind(sockFd_, serverAddr.GetRaw(), addrLen);
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::Bind - bind() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+        abort();
+    }
 }
 
 void Socket::Listen() {
     int ret = listen(sockFd_, SOMAXCONN);
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::Listen - listen() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+        abort();
+    }
 }
 
 int Socket::Accept(SockAddr& clientAddr) {
-    socklen_t addrLen = static_cast<socklen_t>(sizeof(struct sockaddr_in));
-    int connFd = accept4(sockFd_, clientAddr.GetRaw(), &addrLen,
+    struct sockaddr_in addr_in;
+    memset(&addr_in, 0, sizeof(addr_in));
+    auto addr = static_cast<struct sockaddr*>(static_cast<void*>(&addr_in));
+    auto addrLen = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+    int connFd = accept4(sockFd_, addr, &addrLen,
                          SOCK_NONBLOCK | SOCK_CLOEXEC); /// See man accept4
-    assert(connFd != -1);
+    if (connFd == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::Accept - accept4() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+        switch (errorCode) {
+            case EAGAIN:        /// The socket is marked nonblocking and no connections are present to be accepted.
+            case ECONNABORTED:  ///  A connection has been aborted.
+            case EINTR:         /// The system call was interrupted by a signal that was caught before a valid connection arrived.
+            case EMFILE:        /// The per-process limit on the number of open file descriptors has been reached
+            case EPERM:         /// Firewall rules forbid connection.
+                break;
+            case EBADF:         /// sockfd is not an open file descriptor.
+            case EFAULT:        /// The addr argument is not in a writable part of the user address space.
+            case EINVAL:        /// Socket is not listening for connections, or addrlen or flags is invalid.
+            case ENFILE:        /// The system-wide limit on the total number of open files has been reached.
+            case ENOBUFS:       /// Not  enough  free  memory.
+            case ENOMEM:        /// Not  enough  free  memory.
+            case ENOTSOCK:      /// sockfd does not refer to a socket.
+            case EOPNOTSUPP:    /// The referenced socket is not of type SOCK_STREAM.
+            case EPROTO:        /// Protocol error.
+                abort();
+            default:            /// Unknown error.
+                abort();
+        }
+    } else {
+        clientAddr.SetSockAddr(addr_in);
+    }
     return connFd;
 }
 
 void Socket::ShutdownWrite() {
     int ret = shutdown(sockFd_, SHUT_WR);
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::ShutdownWrite - shutdown() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+    }
 }
 
 void Socket::SetTcpNoDelay(bool on) {
     int optval = on ? 1 : 0;
     int ret = setsockopt(sockFd_, IPPROTO_TCP, TCP_NODELAY,
                          &optval, static_cast<socklen_t>(sizeof(optval)));
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::SetTcpNoDelay - setsockopt() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+    }
 }
 
 void Socket::SetReuseAddr(bool on) {
     int optval = on ? 1 : 0;
     int ret = setsockopt(sockFd_, SOL_SOCKET, SO_REUSEADDR,
                          &optval, static_cast<socklen_t>(sizeof(optval)));
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::SetReuseAddr - setsockopt() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+    }
 }
 
 void Socket::SetReusePort(bool on) {
     int optval = on ? 1 : 0;
     int ret = setsockopt(sockFd_, SOL_SOCKET, SO_REUSEPORT,
                          &optval, static_cast<socklen_t>(sizeof(optval)));
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::SetReusePort - setsockopt() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+    }
 }
 
 void Socket::SetKeepAlive(bool on) {
     int optval = on ? 1 : 0;
     int ret = setsockopt(sockFd_, SOL_SOCKET, SO_KEEPALIVE,
                          &optval, static_cast<socklen_t>(sizeof(optval)));
-    assert(ret == 0);
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::SetKeepAlive - setsockopt() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+    }
 }
 
 NAMESPACE_END(net)
