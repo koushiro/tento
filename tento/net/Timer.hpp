@@ -17,7 +17,7 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-class Timer : public NonCopyable {
+class Timer : NonCopyable {
 public:
     Timer(Timestamp when, Duration interval, TimerCallback cb);
     ~Timer();

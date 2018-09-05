@@ -19,7 +19,7 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-class TimerQueue : public NonCopyable {
+class TimerQueue : NonCopyable {
 public:
     TimerQueue(EventLoop* loop);
     ~TimerQueue();

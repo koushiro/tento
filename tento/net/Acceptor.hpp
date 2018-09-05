@@ -6,7 +6,6 @@
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
-//#include "tento/net/Alias.hpp"
 #include "tento/net/Channel.hpp"
 #include "tento/net/Socket.hpp"
 
@@ -15,7 +14,7 @@ NAMESPACE_BEGIN(net)
 
 class EventLoop;
 
-class Acceptor : public NonCopyable {
+class Acceptor : NonCopyable {
 public:
     using NewConnectionCallback
         = std::function<void (Socket sock, const SockAddr& peerAddr)>;

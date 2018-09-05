@@ -7,12 +7,10 @@
 #include <iostream>
 
 #include <spdlog/spdlog.h>
-#include <spdlog/fmt/ostr.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/daily_file_sink.h>
-#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/fmt/ostr.h>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
@@ -22,7 +20,7 @@ NAMESPACE_BEGIN(tento)
 #define LOGGER_NAME "tento"
 
 /// console log level - trace;  file log level - info.
-class Logger : public NonCopyable {
+class Logger : NonCopyable {
 public:
     enum class LogKind {
         Console,

@@ -19,7 +19,7 @@ int EventFdCreate() {
     LOG_TRACE("EventFdCreate, fd = {}", evtfd);
     if (evtfd == -1) {
         auto errorCode = errno;
-        LOG_CRITICAL("EventFdCreate - eventfd() failed, "
+        LOG_CRITICAL("EventFdCreate failed, "
                      "an error '{}' occurred", strerror(errorCode));
         abort();
     }
@@ -48,9 +48,7 @@ __thread EventLoop* tEventLoop = nullptr;
 
 EventLoop::EventLoop()
     : tid_(thread_id()),
-      looping_(false),
       eventHandling_(false),
-      quit_(false),
       poller_(std::make_unique<EPoller>(this)),
       activeChannels_(),
       timerQueue_(std::make_unique<TimerQueue>(this)),
@@ -60,9 +58,11 @@ EventLoop::EventLoop()
       eventFd_(EventFdCreate()),
       eventFdChannel_(std::make_unique<Channel>(this, eventFd_))
 {
-    LOG_TRACE("EventLoop {} was created in thread {}", (void*)this, tid_);
+    LOG_TRACE("EventLoop::EventLoop, EventLoop {} was created in thread {}",
+        (void*)this, tid_);
     if (tEventLoop) {
-        LOG_CRITICAL("Another EventLoop {} exists in this thread {}",
+        LOG_CRITICAL("EventLoop::EventLoop,"
+                     "Another EventLoop {} exists in this thread {}",
                      (void*)tEventLoop, tid_);
     } else {
         tEventLoop = this;
@@ -73,7 +73,8 @@ EventLoop::EventLoop()
 }
 
 EventLoop::~EventLoop() {
-    LOG_DEBUG("EventLoop {} of thread {} destructs in thread {}",
+    LOG_TRACE("EventLoop::~EventLoop, "
+              "EventLoop {} of thread {} destructs in thread {}",
               (void*)this, tid_, thread_id());
     eventFdChannel_->DisableAllEvents();
     eventFdChannel_->Remove();
@@ -83,16 +84,15 @@ EventLoop::~EventLoop() {
 }
 
 void EventLoop::Run() {
-    assert(!looping_);
     AssertInLoopThread();
+    status_ = Status::kStarting;
+    LOG_TRACE("EventLoop::Run, EventLoop {} is starting looping", (void*)this);
 
-    looping_ = true;
-    LOG_TRACE("EventLoop {} start looping", (void*)this);
-
-    while (!quit_) {
+    while (!IsStopping()) {
+        status_ = Status::kRunning;
         activeChannels_.clear();
         pollReturnTime_ = poller_->Poll(kPollTimeMs, &activeChannels_);
-        /// TODO sort channel by priority
+
         eventHandling_ = true;
         for (auto channel : activeChannels_) {
             channel->HandleEvent(pollReturnTime_);
@@ -103,8 +103,8 @@ void EventLoop::Run() {
         doPendingCallbacks();
     }
 
-    LOG_TRACE("EventLoop {} stop looping", (void*)this);
-    looping_ = false;
+    status_ = Status::kStopped;
+    LOG_TRACE("EventLoop::Run, EventLoop {} stopped looping", (void*)this);
 }
 
 void EventLoop::doPendingCallbacks() {
@@ -122,8 +122,11 @@ void EventLoop::doPendingCallbacks() {
 }
 
 void EventLoop::Quit() {
-    assert(!quit_);
-    quit_ = true;
+    LOG_TRACE("EventLoop::Quit(), status = {}", StautsToString());
+//    assert(IsStarting() || IsRunning() || IsStopped() || IsStopping());
+    if (IsStopping() || IsStopped()) return;
+    status_ = Status::kStopping;
+    LOG_TRACE("EventLoop::Quit(), EventLoop {} is stopping looping", (void*)this);
     if (!IsInLoopThread()) {
         WakeUp();
     }
@@ -189,7 +192,7 @@ void EventLoop::CancelTimer(TimerId timerId) {
 }
 
 void EventLoop::abortNotInLoopThread() {
-    LOG_CRITICAL("EventLoop::abortNotInLoopThread - "
+    LOG_CRITICAL("EventLoop::abortNotInLoopThread, "
                  "EventLoop {} was created in tid = {}, current tid = {}",
                  (void*)this, tid_, thread_id());
 }

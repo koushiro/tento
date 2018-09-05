@@ -23,7 +23,7 @@ NAMESPACE_BEGIN(net)
 /// A selectable I/O channel.
 /// Channel class doesn't own the file description.
 /// The file description could be a socketfd, an eventfd, a timerfd, or a signalfd.
-class Channel : public NonCopyable {
+class Channel : NonCopyable {
 public:
     Channel(EventLoop* loop, int fd);
     ~Channel();

@@ -17,6 +17,7 @@ set(TENTO_BASE
 
 set(TENTO_NET
         net/Alias.hpp
+        net/ServerStatus.hpp
         net/Channel.cpp
         net/Channel.hpp
         net/EventLoop.cpp
@@ -35,13 +36,22 @@ set(TENTO_NET
         net/Buffer.hpp
         net/Socket.cpp
         net/Socket.hpp
-        net/Acceptor.cpp
-        net/Acceptor.hpp
+#        net/Acceptor.cpp
+#        net/Acceptor.hpp
 #        net/Connector.cpp
 #        net/Connector.hpp
         )
 
-add_library(tento ${TENTO_BASE} ${TENTO_NET})
+set(TENTO_NET_TCP
+#        net/tcp/TcpConnection.cpp
+#        net/tcp/TcpConnection.hpp
+#        net/tcp/TcpServer.cpp
+#        net/tcp/TcpServer.hpp
+#        net/tcp/TcpClient.cpp
+#        net/tcp/TcpClient.hpp
+        )
+
+add_library(tento ${TENTO_BASE} ${TENTO_NET} ${TENTO_NET_TCP})
 target_link_libraries(tento pthread)
 set_target_properties(tento PROPERTIES OUTPUT_NAME "tento")
 set_target_properties(tento PROPERTIES LINKER_LANGUAGE CXX)

@@ -23,7 +23,8 @@ int main() {
     Logger logger(Logger::LogKind::Both);
 
     auto print = [](EventLoop* loop) {
-        fmt::print("tid = {}, loop = {}\n", thread_id(), (void*)loop);
+        fmt::print("print(): tid = {}, loop = {}\n",
+            thread_id(), (void*)loop);
     };
 
     auto quit = [&](EventLoop* loop) {
@@ -34,22 +35,36 @@ int main() {
     print(nullptr);
 
     {
-        EventLoopThread thread1;
+        EventLoopThread thread;
     }
 
     {   /// Quit() was called in dtor of EventLoopThread.
-        EventLoopThread thread2;
-        auto loop = thread2.StartLoop();
+        EventLoopThread thread;
+        auto loop = thread.Start();
         loop->RunInLoop(std::bind(print, loop));
         std::this_thread::sleep_for(500ms);
     }
 
-    {   /// Quit() was called before dtor of EventLoopThread.
-        /// terminate called without an active exception.
-        /// See EventLoopThread::~EventLoopThread().
-        EventLoopThread thread3;
-        auto loop = thread3.StartLoop();
-        loop->RunInLoop(std::bind(quit, loop));
+    {   /// Quit() was called in Stop() and dtor of EventLoopThread
+        EventLoopThread thread;
+        auto loop = thread.Start();
+        loop->RunInLoop(std::bind(print, loop));
+        thread.Stop();
+        std::this_thread::sleep_for(500ms);
+    }
+
+    {   /// Quit() was called in quit() and dtor of EventLoopThread
+        EventLoopThread thread;
+        auto loop = thread.Start();
+        loop->QueueInLoop(std::bind(quit, loop));
+        std::this_thread::sleep_for(500ms);
+    }
+
+    {   /// Quit() was called in quit(), Stop() and dtor of EventLoopThread
+        EventLoopThread thread;
+        auto loop = thread.Start();
+        loop->QueueInLoop(std::bind(quit, loop));
+        thread.Stop();
         std::this_thread::sleep_for(500ms);
     }
 

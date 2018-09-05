@@ -15,6 +15,7 @@
 #include "tento/base/OS.hpp"
 #include "tento/base/Timestamp.hpp"
 #include "tento/net/Alias.hpp"
+#include "tento/net/ServerStatus.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
@@ -23,16 +24,16 @@ class Channel;
 class EPoller;
 class TimerQueue;
 
-class EventLoop : public NonCopyable {
+class EventLoop : NonCopyable, public ServerStatus {
 public:
     EventLoop();
     ~EventLoop();
 
-    /// Runs Loop forever.
+    /// Runs I/O event loop forever.
     /// Must be called in the same thread as creation of the object.
     void Run();
 
-    /// Quits Loop, thread safe.
+    /// Quits event loop, thread safe.
     void Quit();
 
     /// Internal Usage (Used by Channel).
@@ -75,9 +76,7 @@ private:
 private:
     size_t tid_;    /// consistent with spdlog thread id format, see OS.h.
 
-    std::atomic_bool looping_;
     std::atomic_bool eventHandling_;
-    std::atomic_bool quit_;
 
     Timestamp pollReturnTime_;
     std::unique_ptr<EPoller> poller_;

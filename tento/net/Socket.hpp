@@ -17,7 +17,7 @@ NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 /// Wrapper of sockaddr_in
-class SockAddr : public Copyable {
+class SockAddr : Copyable {
 public:
     explicit SockAddr(uint16_t port = 0, bool loopback = false);
     explicit SockAddr(const struct sockaddr_in addr) : addr_(addr) {}
@@ -51,7 +51,7 @@ private:
 };
 
 /// Wrapper of socket file descriptor, thread safe.
-class Socket : public NonCopyable {
+class Socket : NonCopyable {
 public:
     explicit Socket(int sockFd) : sockFd_(sockFd) {}
     ~Socket() { close(sockFd_); }

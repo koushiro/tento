@@ -11,7 +11,7 @@
 
 NAMESPACE_BEGIN(tento)
 
-class Timestamp : public Copyable {
+class Timestamp : Copyable {
 public:
     Timestamp() : nanos_(0) {}
     explicit Timestamp(uint64_t nanos) : nanos_(nanos) {}

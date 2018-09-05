@@ -13,7 +13,7 @@
 
 NAMESPACE_BEGIN(tento)
 
-class Duration : public Copyable {
+class Duration : Copyable {
 public:
     /// C++14 number delimiter
     static constexpr uint32_t NANOS_PER_MICRO = 1'000;

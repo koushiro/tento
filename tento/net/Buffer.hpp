@@ -25,7 +25,7 @@ NAMESPACE_BEGIN(tento)
 /// 0       <=      readeIndex   <=    writeIndex    <=     size
 /// |-kCheapPrependSize-|----------- kInitialSize ------------|
 /// @endcode
-class Buffer : public Copyable {
+class Buffer : Copyable {
 public:
     static constexpr size_t kCheapPrependSize = 8;
     static constexpr size_t kInitialSize = 1024;

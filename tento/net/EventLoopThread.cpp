@@ -11,37 +11,75 @@ NAMESPACE_BEGIN(net)
 
 EventLoopThread::EventLoopThread()
     : loop_(nullptr),
-      started_(false),
-      latch_(1)
+      startLatch_(1),
+      stopLatch_(1)
 {
+    LOG_TRACE("EventLoopThread::EventLoopThread", "");
 }
 
 EventLoopThread::~EventLoopThread() {
-    LOG_TRACE("EventLoopThread destructor, loop = {}", (void*)loop_);
-    if (loop_ != nullptr) {
-        /// Not 100% race-free,
-        /// still a tiny chance to call destructed object, if threadFunc exits just now.
-        /// but when EventLoopThread destructs, usually programming is exiting anyway.
-        loop_->Quit();
-        thread_.join();
-    }
+    LOG_TRACE("EventLoopThread::~EventLoopThread", "");
+    Stop();
 }
 
-EventLoop* EventLoopThread::StartLoop() {
-    assert(!started_);
-    started_ = true;
+EventLoop* EventLoopThread::Start() {
+    LOG_TRACE("EventLoopThread::Start", "");
+    status_ = Status::kStarting;
 
-    thread_ = std::thread([this]() {
+    assert(thread_ == nullptr);
+    thread_ = std::make_unique<std::thread>([&]() {
+        status_ = Status::kRunning;
+        tid_ = thread_id();
+        name_ = fmt::format("thread-{}", tid_);
+
         EventLoop loop;
         loop_ = &loop;
-        latch_.CountDown();
-        loop.Run();
+
+        startLatch_.CountDown();
+        loop_->Run();
+
+        LOG_TRACE("EventLoopThread::Start, EventLoop = {} stopped.", (void*)loop_);
+        status_ = Status::kStopped;
         loop_ = nullptr;
+        stopLatch_.CountDown();
     });
-    latch_.Wait();
+    startLatch_.Wait();
 
     assert(loop_ != nullptr);
     return loop_;
+}
+
+void EventLoopThread::Stop() {
+    if (!IsRunning()) {
+        status_ = Status::kStopped;
+        Join();
+        return;
+    }
+
+    LOG_TRACE("EventLoopThread::Stop, EventLoop = {}", (void*)loop_);
+    assert(status_ == Status::kRunning);
+    status_ = Status::kStopping;
+    loop_->Quit();
+
+    stopLatch_.Wait();
+
+    Join();
+}
+
+void EventLoopThread::Join() {
+    assert(IsStopped());
+    if (thread_ && thread_->joinable()) {
+        LOG_TRACE("EventLoopThread::Join, join thread {}", tid_);
+        try {
+            thread_->join();
+        } catch (const std::system_error& error) {
+            LOG_ERROR("EventLoopThread::Join, "
+                      "Caught a system error: {}, code = {}",
+                      error.what(), error.code());
+        }
+    } else {
+        LOG_TRACE("EventLoopThread::Join, thread {} had joined", tid_);
+    }
 }
 
 NAMESPACE_END(net)

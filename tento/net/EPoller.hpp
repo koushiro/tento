@@ -18,7 +18,7 @@ NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 /// I/O Multiplexing with epoll.
-class EPoller : public NonCopyable {
+class EPoller : NonCopyable {
 public:
     explicit EPoller(EventLoop* loop);
     ~EPoller();
