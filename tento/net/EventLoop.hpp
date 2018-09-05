@@ -26,6 +26,8 @@ class TimerQueue;
 
 class EventLoop : NonCopyable, public ServerStatus {
 public:
+    using Callback = std::function<void ()>;
+    
     EventLoop();
     ~EventLoop();
 
