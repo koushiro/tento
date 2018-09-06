@@ -30,8 +30,8 @@ set(TENTO_NET
         net/TimerQueue.hpp
         net/EventLoopThread.cpp
         net/EventLoopThread.hpp
-#        net/EventLoopThreadPool.cpp
-#        net/EventLoopThreadPool.hpp
+        net/EventLoopThreadPool.cpp
+        net/EventLoopThreadPool.hpp
         net/Buffer.cpp
         net/Buffer.hpp
         net/Socket.cpp

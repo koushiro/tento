@@ -50,10 +50,7 @@ EventLoop::EventLoop()
     : tid_(thread_id()),
       eventHandling_(false),
       poller_(std::make_unique<EPoller>(this)),
-      activeChannels_(),
       timerQueue_(std::make_unique<TimerQueue>(this)),
-      mutex_(),
-      pendingCallbacks_(),
       callingPendingCallbacks_(false),
       eventFd_(EventFdCreate()),
       eventFdChannel_(std::make_unique<Channel>(this, eventFd_))
@@ -178,13 +175,14 @@ TimerId EventLoop::RunAt(Timestamp time, TimerCallback cb) {
 }
 
 TimerId EventLoop::RunAfter(Duration delay, TimerCallback cb) {
-    return timerQueue_->AddTimer(Timestamp::Now() + delay,
-                                 Duration(0, 0), std::move(cb));
+    auto when = Timestamp::Now() + delay;
+    LOG_TRACE("EventLoop::RunAfter, when = {}", when);
+    return timerQueue_->AddTimer(when, Duration(0, 0), std::move(cb));
 }
 
 TimerId EventLoop::RunEvery(Duration interval, TimerCallback cb) {
-    return timerQueue_->AddTimer(Timestamp::Now() + interval,
-                                 interval, std::move(cb));
+    auto when = Timestamp::Now() + interval;
+    return timerQueue_->AddTimer(when, interval, std::move(cb));
 }
 
 void EventLoop::CancelTimer(TimerId timerId) {

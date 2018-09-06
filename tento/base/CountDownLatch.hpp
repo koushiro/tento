@@ -13,7 +13,7 @@
 
 NAMESPACE_BEGIN(tento)
 
-class CountDownLatch : public  NonCopyable {
+class CountDownLatch : NonCopyable {
 public:
     explicit CountDownLatch(int count) : count_(count) {}
     ~CountDownLatch() = default;

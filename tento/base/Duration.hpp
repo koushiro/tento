@@ -28,6 +28,9 @@ public:
     Duration() : secs_(0), nanos_(0) {}
     explicit Duration(uint64_t secs, uint32_t nanos)
         : secs_(secs), nanos_(nanos) {}
+    ~Duration() = default;
+    Duration(const Duration&) = default;
+    Duration& operator=(const Duration&) = default;
 
     static Duration FromNanos(uint64_t nanos) {
         return Duration(

@@ -15,6 +15,9 @@ class Timestamp : Copyable {
 public:
     Timestamp() : nanos_(0) {}
     explicit Timestamp(uint64_t nanos) : nanos_(nanos) {}
+    ~Timestamp() = default;
+    Timestamp(const Timestamp&) = default;
+    Timestamp& operator=(const Timestamp&) = default;
 
     static Timestamp Invalid() { return Timestamp(); }
 

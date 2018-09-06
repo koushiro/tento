@@ -41,6 +41,9 @@ public:
         assert(ReadableBytes() == 0);
         assert(WritableBytes() == initialSize);
     }
+    ~Buffer() = default;
+    Buffer(const Buffer&) = default;
+    Buffer& operator=(const Buffer&) = default;
 
 public:
     size_t PrependableBytes() const { return readIndex_; }

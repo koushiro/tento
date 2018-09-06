@@ -25,7 +25,7 @@ int TimerFdCreate() {
 }
 
 void TimerFdSet(int timerfd, Timestamp when) {
-    LOG_TRACE("TimerFdSet, fd = {}", timerfd);
+    LOG_TRACE("TimerFdSet, fd = {}, when = {}", timerfd, when);
     // wake up event loop by timerfd_settime()
     struct itimerspec newValue, oldValue;
     memset(&newValue, 0, sizeof(newValue));
@@ -78,17 +78,23 @@ TimerQueue::~TimerQueue() {
 
 TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb) {
     auto timer = new Timer(when, interval, std::move(cb));
+    LOG_TRACE("TimerQueue::AddTimer, id = {}, when = {}", timer->Id(), when);
+
     /// Transfer actual work to I/O thread, thread safe.
+    /// TODO: bug in net_event_loop_thread_pool_test.cpp???
     ownerLoop_->RunInLoop([&]() {
         bool earliestChanged = insert(timer);
         if (earliestChanged) {
+            LOG_TRACE("RunInLoop Callback, when = {}, now = {}", when, Timestamp::Now());
             TimerFdSet(timerFd_, when);
         }
     });
+
     return TimerId(timer->Id(), timer);
 }
 
 void TimerQueue::CancelTimer(TimerId timerId) {
+    LOG_TRACE("TimerQueue::CancelTimer, id = {}", timerId.first);
     /// Transfer actual work to I/O thread, thread safe.
     ownerLoop_->RunInLoop([&]() {
         auto it = activeTimers_.find(timerId);
