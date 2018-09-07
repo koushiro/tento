@@ -27,20 +27,20 @@ int main() {
                thread_id(), latch.GetCount());
 
    Thread thread(
-        std::thread([&]() {
-            fmt::print("thread(): tid = {}", thread_id());
-            auto count = latch.GetCount();
-            while (count > 0) {
-                latch.CountDown();
-                count = latch.GetCount();
-                fmt::print(
-                    "thread(): tid = {}; count = {}\n",
-                    thread_id(), count
-                );
-                std::this_thread::sleep_for(2s);
-            }
-        })
-    );
+       [&]() {
+           fmt::print("thread(): tid = {}", thread_id());
+           auto count = latch.GetCount();
+           while (count > 0) {
+               latch.CountDown();
+               count = latch.GetCount();
+               fmt::print(
+                   "thread(): tid = {}; count = {}\n",
+                   thread_id(), count
+               );
+               std::this_thread::sleep_for(2s);
+           }
+       }
+   );
 
     latch.Wait();
     fmt::print("main(): tid = {}; count = {}\n",

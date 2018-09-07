@@ -80,12 +80,14 @@ TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb
     auto timer = new Timer(when, interval, std::move(cb));
     LOG_TRACE("TimerQueue::AddTimer, id = {}, when = {}", timer->Id(), when);
     /// Transfer actual work to I/O thread, thread safe.
-    ownerLoop_->RunInLoop([=]() {
-        bool earliestChanged = insert(timer);
-        if (earliestChanged) {
-            TimerFdSet(timerFd_, when);
+    ownerLoop_->RunInLoop(
+        [=]() {
+            bool earliestChanged = insert(timer);
+            if (earliestChanged) {
+                TimerFdSet(timerFd_, when);
+            }
         }
-    });
+    );
 
     return TimerId(timer->Id(), timer);
 }
@@ -93,18 +95,20 @@ TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb
 void TimerQueue::CancelTimer(TimerId timerId) {
     LOG_TRACE("TimerQueue::CancelTimer, id = {}", timerId.first);
     /// Transfer actual work to I/O thread, thread safe.
-    ownerLoop_->RunInLoop([=]() {
-        auto it = activeTimers_.find(timerId);
-        if (it != activeTimers_.end()) {
-            auto timer = it->second;
-            timers_.erase(TimeEntry(timer->Expiration(), timer));
-            activeTimers_.erase(it);
-            delete timer;
-        } else if (callingExpiredTimers_) {
-            cancelingTimers_.insert(timerId);
+    ownerLoop_->RunInLoop(
+        [=]() {
+            auto it = activeTimers_.find(timerId);
+            if (it != activeTimers_.end()) {
+                auto timer = it->second;
+                timers_.erase(TimeEntry(timer->Expiration(), timer));
+                activeTimers_.erase(it);
+                delete timer;
+            } else if (callingExpiredTimers_) {
+                cancelingTimers_.insert(timerId);
+            }
+            assert(timers_.size() == activeTimers_.size());
         }
-        assert(timers_.size() == activeTimers_.size());
-    });
+    );
 }
 
 void TimerQueue::handleRead() {

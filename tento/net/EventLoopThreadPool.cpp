@@ -16,15 +16,6 @@ EventLoopThreadPool::EventLoopThreadPool(EventLoop* baseLoop, uint32_t numThread
 {
     LOG_TRACE("EventLoopThreadPool::EventLoopThreadPool, "
               "base loop = {}, thread num = {}", (void*)baseLoop_, numThread_);
-}
-
-EventLoopThreadPool::~EventLoopThreadPool() {
-    LOG_TRACE("EventLoopThreadPool::~EventLoopThreadPool", "");
-    threads_.clear();
-}
-
-void EventLoopThreadPool::Start() {
-    LOG_TRACE("EventLoopThreadPool::Start", "");
     status_ = Status::kStarting;
 
     /// Single thread condition (there is only an event loop - baseLoop_).
@@ -35,13 +26,18 @@ void EventLoopThreadPool::Start() {
 
     for (uint32_t i = 0; i < numThread_; ++i) {
         auto thread = std::make_unique<EventLoopThread>();
-        thread->Start();
-        LOG_TRACE("index = {}, {} started", i, thread->Name());
+        LOG_TRACE("index = {}, thread-{} started", i, thread->ThreadId());
         threads_.push_back(std::move(thread));
     }
 
     LOG_TRACE("thread pool (num = {}) totally started", numThread_);
     status_ = Status::kRunning;
+}
+
+EventLoopThreadPool::~EventLoopThreadPool() {
+    LOG_TRACE("EventLoopThreadPool::~EventLoopThreadPool", "");
+//    threads_.clear();
+    Stop();
 }
 
 void EventLoopThreadPool::Stop() {
@@ -63,7 +59,7 @@ void EventLoopThreadPool::Stop() {
     /// status_ will be stored with kStopped.
     uint32_t i = 0;
     for (auto& thread : threads_) {
-        LOG_TRACE("index = {}, {} will exit", i, thread->Name());
+        LOG_TRACE("index = {}, thread-{} will exit", i, thread->ThreadId());
         thread->Stop();
         ++i;
     }
@@ -79,7 +75,7 @@ EventLoop* EventLoopThreadPool::GetNextLoop() {
     if (IsRunning() && !threads_.empty()) {
         uint64_t next = next_++;
         next %= threads_.size();
-        loop = (threads_[next])->Loop();
+        loop = (threads_[next])->GetLoop();
     }
 
     return loop;
@@ -91,7 +87,7 @@ EventLoop* EventLoopThreadPool::GetNextLoopWithHash(uint64_t hash) {
 
     if (IsRunning() && !threads_.empty()) {
         uint64_t next =  hash % threads_.size();
-        loop = (threads_[next])->Loop();
+        loop = (threads_[next])->GetLoop();
     }
 
     return loop;

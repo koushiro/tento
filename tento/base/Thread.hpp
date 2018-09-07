@@ -5,6 +5,7 @@
 #pragma once
 
 #include <thread>
+#include <functional>
 
 #include "tento/base/Common.hpp"
 
@@ -55,13 +56,18 @@ inline size_t thread_id()
 #endif
 }
 
+///////////////////////////////////////////////////////////////////////////////
 /// Thread RAII, move-only.
+///////////////////////////////////////////////////////////////////////////////
 class Thread {
 public:
     enum class DtorAction { Join, Detach };
 
     explicit Thread(std::thread&& t, DtorAction action = DtorAction::Join)
         : action_(action), t_(std::move(t)) {}
+
+    explicit Thread(std::function<void ()>&& callback, DtorAction action = DtorAction::Join)
+        : action_(action), t_(std::move(callback)) {}
 
     ~Thread() {
         if (t_.joinable()) {

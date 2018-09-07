@@ -34,7 +34,6 @@ int main() {
     {
         LOG_TRACE("Single thread, loop = {}", (void*)&loop);
         EventLoopThreadPool pool(&loop);
-        pool.Start();
         assert(pool.GetNextLoop() == &loop);
         assert(pool.GetNextLoop() == &loop);
         assert(pool.GetNextLoop() == &loop);
@@ -43,8 +42,8 @@ int main() {
     {
         LOG_TRACE("Another thread", "");
         EventLoopThreadPool pool(&loop, 1);
-        pool.Start();
         EventLoop* nextLoop = pool.GetNextLoop();
+        assert(nextLoop);
         nextLoop->RunAfter(Duration::FromSecs(2), [=]() { return print(nextLoop); });
         assert(nextLoop != &loop);
         assert(nextLoop == pool.GetNextLoop());
@@ -55,7 +54,6 @@ int main() {
     {
         LOG_TRACE("Three threads", "");
         EventLoopThreadPool pool(&loop, 3);
-        pool.Start();
         EventLoop* nextLoop = pool.GetNextLoop();
         nextLoop->RunInLoop([=]() { return print(nextLoop); });
         assert(nextLoop != &loop);

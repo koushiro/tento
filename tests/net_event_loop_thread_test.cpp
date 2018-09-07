@@ -40,14 +40,14 @@ int main() {
 
     {   /// Quit() was called in dtor of EventLoopThread.
         EventLoopThread thread;
-        auto loop = thread.Start();
+        auto loop = thread.GetLoop();
         loop->RunInLoop(std::bind(print, loop));
         std::this_thread::sleep_for(500ms);
     }
 
     {   /// Quit() was called in Stop() and dtor of EventLoopThread
         EventLoopThread thread;
-        auto loop = thread.Start();
+        auto loop = thread.GetLoop();
         loop->RunInLoop(std::bind(print, loop));
         thread.Stop();
         std::this_thread::sleep_for(500ms);
@@ -55,14 +55,14 @@ int main() {
 
     {   /// Quit() was called in quit() and dtor of EventLoopThread
         EventLoopThread thread;
-        auto loop = thread.Start();
+        auto loop = thread.GetLoop();
         loop->QueueInLoop(std::bind(quit, loop));
         std::this_thread::sleep_for(500ms);
     }
 
     {   /// Quit() was called in quit(), Stop() and dtor of EventLoopThread
         EventLoopThread thread;
-        auto loop = thread.Start();
+        auto loop = thread.GetLoop();
         loop->QueueInLoop(std::bind(quit, loop));
         thread.Stop();
         std::this_thread::sleep_for(500ms);

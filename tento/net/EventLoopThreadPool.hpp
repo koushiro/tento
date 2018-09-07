@@ -17,8 +17,8 @@ public:
     explicit EventLoopThreadPool(EventLoop* baseLoop, uint32_t numThread = 0);
     ~EventLoopThreadPool();
 
-    void Start();
-    /// @brief Stop all working thread. If you forget to call this method,
+    /// @brief Stop all working thread manually.
+    /// If you forget to call this method,
     /// it will be invoked automatically in the destructor.
     /// @note DO NOT call this method from any of the working thread.
     void Stop();
@@ -30,6 +30,7 @@ public:
 private:
     EventLoop* baseLoop_;
     uint32_t numThread_;
+//    std::vector<EventLoopThread> threads_;
     std::vector<std::unique_ptr<EventLoopThread>> threads_;
     std::atomic_uint64_t next_;
 };
