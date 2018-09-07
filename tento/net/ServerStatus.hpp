@@ -12,6 +12,7 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
+/// Non-Copyable and Non-Movable
 class ServerStatus {
 public:
     enum class Status {
@@ -27,7 +28,7 @@ public:
     bool IsStopping() const { return status_.load() == Status::kStopping; }
     bool IsStopped()  const { return status_.load() == Status::kStopped;  }
 
-    std::string StautsToString() const {
+    std::string StatusToString() const {
         switch (status_.load()) {
             case Status::kNull:     return "kNull";
             case Status::kStarting: return "kStarting";

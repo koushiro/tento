@@ -16,7 +16,7 @@ EventLoopThread::EventLoopThread()
     LOG_TRACE("EventLoopThread::EventLoopThread", "");
     status_ = Status::kStarting;
 
-    CountDownLatch startLatch(1);
+    CountDownLatch startLatch{1};
 
     thread_ = std::make_unique<Thread>(
         [this, &startLatch]() {

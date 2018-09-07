@@ -36,7 +36,6 @@ EventLoopThreadPool::EventLoopThreadPool(EventLoop* baseLoop, uint32_t numThread
 
 EventLoopThreadPool::~EventLoopThreadPool() {
     LOG_TRACE("EventLoopThreadPool::~EventLoopThreadPool", "");
-//    threads_.clear();
     Stop();
 }
 

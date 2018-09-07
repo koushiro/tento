@@ -22,24 +22,6 @@ public:
     EventLoopThread();
     ~EventLoopThread();
 
-    EventLoopThread(EventLoopThread&& rhs) noexcept
-        : loop_(rhs.loop_), tid_(rhs.tid_), thread_(std::move(rhs.thread_))
-    {
-        loop_ = nullptr;
-        tid_ = 0;
-    }
-
-    EventLoopThread& operator=(EventLoopThread&& rhs) noexcept {
-        if (this != &rhs) {
-            loop_ = rhs.loop_;
-            tid_ = rhs.tid_;
-            thread_ = std::move(rhs.thread_);
-            rhs.loop_ = nullptr;
-            rhs.tid_ = 0;
-        }
-        return *this;
-    }
-
     /// @brief Stop the working thread manually.
     /// If you forget to call this method,
     /// it will be invoked automatically in the destructor.

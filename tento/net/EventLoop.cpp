@@ -119,7 +119,7 @@ void EventLoop::doPendingCallbacks() {
 }
 
 void EventLoop::Quit() {
-    LOG_TRACE("EventLoop::Quit(), status = {}", StautsToString());
+    LOG_TRACE("EventLoop::Quit(), status = {}", StatusToString());
 //    assert(IsStarting() || IsRunning() || IsStopped() || IsStopping());
     if (IsStopping() || IsStopped()) return;
     status_ = Status::kStopping;
