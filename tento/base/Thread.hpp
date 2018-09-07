@@ -1,9 +1,14 @@
 //
-// Created by koushiro on 9/4/18.
+// Created by koushiro on 9/7/18.
 //
 
 #pragma once
 
+#include <thread>
+
+#include "tento/base/Common.hpp"
+
+///////////////////////////////////////////////////////////////////////////////
 #ifdef _WIN32
 
 #else // unix
@@ -19,8 +24,7 @@
 #endif
 
 #endif // unix
-
-#include "tento/base/Common.hpp"
+///////////////////////////////////////////////////////////////////////////////
 
 NAMESPACE_BEGIN(tento)
 
@@ -50,5 +54,32 @@ inline size_t thread_id()
     return static_cast<size_t>(std::hash<std::thread::id>()(std::this_thread::get_id()));
 #endif
 }
+
+/// Thread RAII, move-only.
+class Thread {
+public:
+    enum class DtorAction { Join, Detach };
+
+    explicit Thread(std::thread&& t, DtorAction action = DtorAction::Join)
+        : action_(action), t_(std::move(t)) {}
+
+    ~Thread() {
+        if (t_.joinable()) {
+            switch (action_) {
+                case DtorAction::Join:   t_.join();   break;
+                case DtorAction::Detach: t_.detach(); break;
+            }
+        }
+    }
+
+    Thread(Thread&&) = default;
+    Thread& operator=(Thread&&) = default;
+
+    std::thread& Get() { return t_; }
+
+private:
+    DtorAction action_;
+    std::thread t_;
+};
 
 NAMESPACE_END(tento)

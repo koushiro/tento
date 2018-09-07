@@ -10,7 +10,7 @@
 #include "fmt/ostream.h"
 
 #include "tento/base/Logger.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 #include "tento/net/Acceptor.hpp"
 
 using namespace tento;
@@ -23,7 +23,7 @@ int main() {
     SockAddr listenAddr(9981);
     EventLoop loop;
     Acceptor acceptor(&loop, listenAddr);
-    acceptor.SetNewConnectionCallback([&](Socket sock, const SockAddr& peerAddr) {
+    acceptor.SetNewConnectionCallback([](Socket sock, const SockAddr& peerAddr) {
         fmt::print("accepted a new connection from {}\n", peerAddr.ToIpAndPort());
         std::string str("How are you?\n");
         write(sock.Fd(), str.c_str(), str.length());

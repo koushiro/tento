@@ -27,7 +27,7 @@ EventLoop* EventLoopThread::Start() {
     status_ = Status::kStarting;
 
     assert(thread_ == nullptr);
-    thread_ = std::make_unique<std::thread>([&]() {
+    thread_ = std::make_unique<std::thread>([this]() {
         status_ = Status::kRunning;
         tid_ = thread_id();
         name_ = fmt::format("thread-{}", tid_);

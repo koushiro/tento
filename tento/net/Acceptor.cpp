@@ -32,7 +32,8 @@ Acceptor::Acceptor(EventLoop* loop, const SockAddr& listenAddr)
     acceptSocket_.Bind(listenAddr);
     acceptSocket_.SetReuseAddr(true);
     acceptSocket_.SetReusePort(true);
-    acceptChannel_.SetReadCallback([&]() {
+
+    acceptChannel_.SetReadCallback([this]() {
         /// handle read event
         loop_->AssertInLoopThread();
         SockAddr peerAddr;

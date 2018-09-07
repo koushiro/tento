@@ -16,7 +16,7 @@ using namespace std::chrono_literals;
 
 #include "tento/base/CountDownLatch.hpp"
 #include "tento/base/Logger.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 using namespace tento;
 
 int main() {
@@ -26,18 +26,21 @@ int main() {
     fmt::print("main(): tid = {}; count = {}\n",
                thread_id(), latch.GetCount());
 
-    auto thread = std::thread([&]() {
-        fmt::print("thread(): tid = {}", thread_id());
-        auto count = latch.GetCount();
-        while (count > 0) {
-            latch.CountDown();
-            count = latch.GetCount();
-            fmt::print("thread(): tid = {}; count = {}\n",
-                      thread_id(), count);
-            std::this_thread::sleep_for(2s);
-        }
-    });
-    thread.join();
+   Thread thread(
+        std::thread([&]() {
+            fmt::print("thread(): tid = {}", thread_id());
+            auto count = latch.GetCount();
+            while (count > 0) {
+                latch.CountDown();
+                count = latch.GetCount();
+                fmt::print(
+                    "thread(): tid = {}; count = {}\n",
+                    thread_id(), count
+                );
+                std::this_thread::sleep_for(2s);
+            }
+        })
+    );
 
     latch.Wait();
     fmt::print("main(): tid = {}; count = {}\n",

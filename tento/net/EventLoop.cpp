@@ -65,7 +65,7 @@ EventLoop::EventLoop()
         tEventLoop = this;
     }
 
-    eventFdChannel_->SetReadCallback([&]() { EventFdRead(eventFd_); });
+    eventFdChannel_->SetReadCallback([this]() { EventFdRead(eventFd_); });
     eventFdChannel_->EnableReadEvent();
 }
 
@@ -129,26 +129,6 @@ void EventLoop::Quit() {
     }
 }
 
-void EventLoop::UpdateChannel(Channel* channel) {
-    assert(channel->OwnerLoop() == this);
-    AssertInLoopThread();
-    poller_->UpdateChannel(channel);
-}
-
-void EventLoop::RemoveChannel(Channel* channel) {
-    assert(channel->OwnerLoop() == this);
-    AssertInLoopThread();
-    if (eventHandling_) {
-        assert(std::find(activeChannels_.begin(), activeChannels_.end(), channel)
-            == activeChannels_.end());
-    }
-    poller_->RemoveChannel(channel);
-}
-
-void EventLoop::WakeUp() {
-    EventFdWrite(eventFd_);
-}
-
 void EventLoop::RunInLoop(Callback cb) {
     if (IsInLoopThread()) {
         cb();
@@ -171,22 +151,51 @@ void EventLoop::QueueInLoop(Callback cb) {
 }
 
 TimerId EventLoop::RunAt(Timestamp time, TimerCallback cb) {
+    LOG_TRACE("EventLoop::RunAt, time = {}", time);
     return timerQueue_->AddTimer(time, Duration(0, 0), std::move(cb));
 }
 
 TimerId EventLoop::RunAfter(Duration delay, TimerCallback cb) {
-    auto when = Timestamp::Now() + delay;
-    LOG_TRACE("EventLoop::RunAfter, when = {}", when);
-    return timerQueue_->AddTimer(when, Duration(0, 0), std::move(cb));
+    auto time = Timestamp::Now() + delay;
+    LOG_TRACE("EventLoop::RunAfter, time = {}", time);
+    return timerQueue_->AddTimer(time, Duration(0, 0), std::move(cb));
 }
 
 TimerId EventLoop::RunEvery(Duration interval, TimerCallback cb) {
-    auto when = Timestamp::Now() + interval;
-    return timerQueue_->AddTimer(when, interval, std::move(cb));
+    auto time = Timestamp::Now() + interval;
+    LOG_TRACE("EventLoop::RunEvery, time = {}", time);
+    return timerQueue_->AddTimer(time, interval, std::move(cb));
 }
 
 void EventLoop::CancelTimer(TimerId timerId) {
-    timerQueue_->CancelTimer(timerId);
+    LOG_TRACE("EventLoop::CancelTimer, timer id = {}", timerId.first);
+    return timerQueue_->CancelTimer(timerId);
+}
+
+void EventLoop::UpdateChannel(Channel* channel) {
+    assert(channel->OwnerLoop() == this);
+    AssertInLoopThread();
+    poller_->UpdateChannel(channel);
+}
+
+void EventLoop::RemoveChannel(Channel* channel) {
+    assert(channel->OwnerLoop() == this);
+    AssertInLoopThread();
+    if (eventHandling_) {
+        assert(std::find(activeChannels_.begin(), activeChannels_.end(), channel)
+               == activeChannels_.end());
+    }
+    poller_->RemoveChannel(channel);
+}
+
+void EventLoop::WakeUp() {
+    EventFdWrite(eventFd_);
+}
+
+void EventLoop::AssertInLoopThread() {
+    if (!IsInLoopThread()) {
+        abortNotInLoopThread();
+    }
 }
 
 void EventLoop::abortNotInLoopThread() {

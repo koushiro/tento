@@ -10,6 +10,7 @@
 #include "tento/base/Common.hpp"
 #include "tento/base/CountDownLatch.hpp"
 #include "tento/base/NonCopyable.hpp"
+#include "tento/base/Thread.hpp"
 #include "tento/net/ServerStatus.hpp"
 #include "tento/net/EventLoop.hpp"
 

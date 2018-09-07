@@ -13,7 +13,7 @@ using namespace std::chrono_literals;
 #include "fmt/ostream.h"
 
 #include "tento/base/Logger.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 #include "tento/net/EventLoopThread.hpp"
 
 using namespace tento;

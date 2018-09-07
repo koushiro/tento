@@ -5,7 +5,7 @@
 #include "tento/net/EventLoop.hpp"
 
 #include "tento/base/Logger.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 
 using namespace tento;
 using namespace tento::net;
@@ -19,7 +19,7 @@ int main() {
     auto thread = std::thread([]() {
         LOG_INFO("thread(): tid = {}", thread_id());
         EventLoop threadLoop;
-        threadLoop.RunAfter(Duration::FromSecs(5), [&]() {
+        threadLoop.RunAfter(Duration::FromSecs(5), []() {
             LOG_INFO("RunAfter callback tid = {}", thread_id());
 //           EventLoop anotherLoop;
         });

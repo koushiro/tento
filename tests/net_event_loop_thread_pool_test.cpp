@@ -13,7 +13,7 @@ using namespace std::chrono_literals;
 #include "fmt/ostream.h"
 
 #include "tento/base/Logger.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 #include "tento/net/EventLoopThreadPool.hpp"
 
 using namespace tento;
@@ -31,14 +31,14 @@ int main() {
     EventLoop loop;
     loop.RunAfter(Duration::FromSecs(15), [&]() { return loop.Quit(); });
 
-//    {
-//        LOG_TRACE("Single thread, loop = {}", (void*)&loop);
-//        EventLoopThreadPool pool(&loop);
-//        pool.Start();
-//        assert(pool.GetNextLoop() == &loop);
-//        assert(pool.GetNextLoop() == &loop);
-//        assert(pool.GetNextLoop() == &loop);
-//    }
+    {
+        LOG_TRACE("Single thread, loop = {}", (void*)&loop);
+        EventLoopThreadPool pool(&loop);
+        pool.Start();
+        assert(pool.GetNextLoop() == &loop);
+        assert(pool.GetNextLoop() == &loop);
+        assert(pool.GetNextLoop() == &loop);
+    }
 
     {
         LOG_TRACE("Another thread", "");
@@ -52,17 +52,17 @@ int main() {
         std::this_thread::sleep_for(3s);
     }
 
-//    {
-//        LOG_TRACE("Three threads", "");
-//        EventLoopThreadPool pool(&loop, 3);
-//        pool.Start();
-//        EventLoop* nextLoop = pool.GetNextLoop();
-//        nextLoop->RunInLoop([=]() { return print(nextLoop); });
-//        assert(nextLoop != &loop);
-//        assert(nextLoop != pool.GetNextLoop());
-//        assert(nextLoop != pool.GetNextLoop());
-//        assert(nextLoop == pool.GetNextLoop());
-//    }
+    {
+        LOG_TRACE("Three threads", "");
+        EventLoopThreadPool pool(&loop, 3);
+        pool.Start();
+        EventLoop* nextLoop = pool.GetNextLoop();
+        nextLoop->RunInLoop([=]() { return print(nextLoop); });
+        assert(nextLoop != &loop);
+        assert(nextLoop != pool.GetNextLoop());
+        assert(nextLoop != pool.GetNextLoop());
+        assert(nextLoop == pool.GetNextLoop());
+    }
 
     loop.Run();
 

@@ -58,6 +58,7 @@ Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
 }
 
 void EPoller::UpdateChannel(Channel* channel) {
+    ownerLoop_->AssertInLoopThread();
     int status = channel->Status();
     LOG_TRACE("UpdateChannel, fd = {}, events = {}, status = {}",
               channel->Fd(), channel->EventsToString(), status);
@@ -87,6 +88,7 @@ void EPoller::UpdateChannel(Channel* channel) {
 }
 
 void EPoller::RemoveChannel(Channel* channel) {
+    ownerLoop_->AssertInLoopThread();
     LOG_TRACE("RemoveChannel, fd = {}", channel->Fd());
     assert(channels_.find(channel->Fd()) != channels_.end());
     assert(channels_[channel->Fd()] == channel);

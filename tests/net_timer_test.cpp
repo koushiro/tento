@@ -10,7 +10,7 @@
 #include "fmt/ostream.h"
 
 #include "tento/base/Logger.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 #include "tento/net/EventLoop.hpp"
 
 using namespace tento;

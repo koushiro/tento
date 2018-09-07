@@ -30,7 +30,7 @@ public:
     TimerId AddTimer(Timestamp when, Duration interval, TimerCallback cb);
 
     /// Cancel a timer by unique id.
-    void CancelTimer(TimerId);
+    void CancelTimer(TimerId timerId);
 
 private:
     using TimeEntry = std::pair<Timestamp, Timer*>;

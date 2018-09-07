@@ -79,13 +79,10 @@ TimerQueue::~TimerQueue() {
 TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb) {
     auto timer = new Timer(when, interval, std::move(cb));
     LOG_TRACE("TimerQueue::AddTimer, id = {}, when = {}", timer->Id(), when);
-
     /// Transfer actual work to I/O thread, thread safe.
-    /// TODO: bug in net_event_loop_thread_pool_test.cpp???
-    ownerLoop_->RunInLoop([&]() {
+    ownerLoop_->RunInLoop([=]() {
         bool earliestChanged = insert(timer);
         if (earliestChanged) {
-            LOG_TRACE("RunInLoop Callback, when = {}, now = {}", when, Timestamp::Now());
             TimerFdSet(timerFd_, when);
         }
     });
@@ -96,7 +93,7 @@ TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb
 void TimerQueue::CancelTimer(TimerId timerId) {
     LOG_TRACE("TimerQueue::CancelTimer, id = {}", timerId.first);
     /// Transfer actual work to I/O thread, thread safe.
-    ownerLoop_->RunInLoop([&]() {
+    ownerLoop_->RunInLoop([=]() {
         auto it = activeTimers_.find(timerId);
         if (it != activeTimers_.end()) {
             auto timer = it->second;

@@ -8,11 +8,11 @@ set(TENTO_BASE
         base/Common.hpp
         base/NonCopyable.hpp
         base/Copyable.hpp
+        base/Logger.hpp
         base/Duration.hpp
         base/Timestamp.hpp
-        base/Logger.hpp
+        base/Thread.hpp
         base/CountDownLatch.hpp
-        base/OS.hpp
         )
 
 set(TENTO_NET
@@ -36,8 +36,8 @@ set(TENTO_NET
         net/Buffer.hpp
         net/Socket.cpp
         net/Socket.hpp
-#        net/Acceptor.cpp
-#        net/Acceptor.hpp
+        net/Acceptor.cpp
+        net/Acceptor.hpp
 #        net/Connector.cpp
 #        net/Connector.hpp
         )

@@ -12,7 +12,7 @@
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
-#include "tento/base/OS.hpp"
+#include "tento/base/Thread.hpp"
 #include "tento/base/Timestamp.hpp"
 #include "tento/net/Alias.hpp"
 #include "tento/net/ServerStatus.hpp"
@@ -38,12 +38,6 @@ public:
     /// Quits event loop, thread safe.
     void Quit();
 
-    /// Internal Usage (Used by Channel).
-    void UpdateChannel(Channel* channel);   /// add or update channel in poller.
-    void RemoveChannel(Channel* channel);   /// remove channel from poller.
-    /// Internal Usage, wakeup I/O thread when polling (Used by ).
-    void WakeUp();
-
 public:
     /// Runs callback immediately in the loop thread.
     /// It wakes up the loop, and run the cb.
@@ -65,8 +59,15 @@ public:
     void CancelTimer(TimerId timerId);
 
 public:
-    void AssertInLoopThread() { if (!IsInLoopThread()) { abortNotInLoopThread(); } }
+    void AssertInLoopThread();
     bool IsInLoopThread() const { return tid_ == thread_id(); }
+
+    /// Internal Usage (Used by Channel).
+    void UpdateChannel(Channel* channel);   /// add or update channel in poller.
+    void RemoveChannel(Channel* channel);   /// remove channel from poller.
+
+    /// Internal Usage, wakeup I/O thread when polling.
+    void WakeUp();
 
 private:
     void abortNotInLoopThread();
