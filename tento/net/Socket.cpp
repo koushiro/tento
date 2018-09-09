@@ -15,6 +15,11 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
+bool SplitIpAndPort(const std::string& address, std::string& ip, uint16_t& port) {
+    /// TODO
+    return false;
+}
+
 SockAddr::SockAddr(uint16_t port, bool loopback) {
     memset(&addr_, 0, sizeof(addr_));
     addr_.sin_family = AF_INET;
@@ -24,6 +29,20 @@ SockAddr::SockAddr(uint16_t port, bool loopback) {
 }
 
 SockAddr::SockAddr(const std::string& ip, uint16_t port) {
+    memset(&addr_, 0, sizeof(addr_));
+    addr_.sin_family = AF_INET;
+    int ret = inet_pton(AF_INET, ip.c_str(), &addr_.sin_addr.s_addr);
+    assert(ret == 1);
+    addr_.sin_port = htons(port);
+}
+
+SockAddr::SockAddr(const std::string& addr) {
+    std::string ip;
+    uint16_t port;
+    {
+        bool ret = SplitIpAndPort(addr, ip, port);
+        assert(ret);
+    }
     memset(&addr_, 0, sizeof(addr_));
     addr_.sin_family = AF_INET;
     int ret = inet_pton(AF_INET, ip.c_str(), &addr_.sin_addr.s_addr);
@@ -50,9 +69,47 @@ std::string SockAddr::ToIpAndPort() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Socket::Bind(const SockAddr& serverAddr) {
+int CreateSocket(sa_family_t family = AF_INET) {
+    int sockFd = socket(family,
+                        SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
+                        IPPROTO_TCP);
+    if (sockFd == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("CreateSocket - socket() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+        abort();
+    }
+    return sockFd;
+}
+
+Socket::Socket()
+    : sockFd_(CreateSocket())
+{
+    LOG_TRACE("Socket::Socket, create socket, fd = {}", sockFd_);
+}
+
+Socket::Socket(int connFd)
+    : sockFd_(connFd)
+{
+    if (sockFd_ == kInvalidSocket) {
+        LOG_ERROR("Socket::Socket(int connFd), connFd is invalid socket fd");
+    } else {
+        LOG_TRACE("Socket::Socket, create socket, fd = {}", sockFd_);
+    }
+}
+
+Socket::~Socket() {
+    if (sockFd_ == kInvalidSocket) {
+        // This object has been closed or moved.
+        // So we don't need to call close.
+        return;
+    }
+    Close();
+}
+
+void Socket::Bind(const SockAddr& addr) {
     auto addrLen = static_cast<socklen_t>(sizeof(struct sockaddr_in));
-    int ret = bind(sockFd_, serverAddr.GetRaw(), addrLen);
+    int ret = bind(sockFd_, addr.GetRaw(), addrLen);
     if (ret == -1) {
         auto errorCode = errno;
         LOG_CRITICAL("Socket::Bind - bind() failed, "
@@ -61,8 +118,8 @@ void Socket::Bind(const SockAddr& serverAddr) {
     }
 }
 
-void Socket::Listen() {
-    int ret = listen(sockFd_, SOMAXCONN);
+void Socket::Listen(int n) {
+    int ret = listen(sockFd_, n);
     if (ret == -1) {
         auto errorCode = errno;
         LOG_CRITICAL("Socket::Listen - listen() failed, "
@@ -71,7 +128,7 @@ void Socket::Listen() {
     }
 }
 
-int Socket::Accept(SockAddr& clientAddr) {
+Socket Socket::Accept(SockAddr& peerAddr) {
     struct sockaddr_in addr_in;
     memset(&addr_in, 0, sizeof(addr_in));
     auto addr = static_cast<struct sockaddr*>(static_cast<void*>(&addr_in));
@@ -103,9 +160,21 @@ int Socket::Accept(SockAddr& clientAddr) {
                 abort();
         }
     } else {
-        clientAddr.SetSockAddr(addr_in);
+        peerAddr.SetSockAddr(addr_in);
     }
-    return connFd;
+    return Socket(connFd);
+}
+
+void Socket::Close() {
+    if (sockFd_ == kInvalidSocket) {
+        // This object has been closed or moved.
+        // So we don't need to call close.
+        return;
+    }
+
+    LOG_TRACE("Socket::Close, close socket, fd = {}", sockFd_);
+    close(sockFd_);
+    sockFd_ = kInvalidSocket;
 }
 
 void Socket::ShutdownWrite() {
@@ -157,6 +226,19 @@ void Socket::SetKeepAlive(bool on) {
     if (ret == -1) {
         auto errorCode = errno;
         LOG_CRITICAL("Socket::SetKeepAlive - setsockopt() failed, "
+                     "an error '{}' occurred", strerror(errorCode));
+    }
+}
+
+void Socket::SetTimeout(uint32_t timeout_ms) {
+    struct timeval tv;
+    tv.tv_sec = timeout_ms / 1000;
+    tv.tv_usec = (timeout_ms % 1000) * 1000;
+    int ret = setsockopt(sockFd_, SOL_SOCKET, SO_RCVTIMEO,
+                         (const char*)&tv, sizeof(tv));
+    if (ret == -1) {
+        auto errorCode = errno;
+        LOG_CRITICAL("Socket::SetTimeout - setsockopt() failed, "
                      "an error '{}' occurred", strerror(errorCode));
     }
 }

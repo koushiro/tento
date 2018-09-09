@@ -30,5 +30,5 @@ target_link_libraries(net_event_loop_thread_test tento)
 add_executable(net_event_loop_thread_pool_test net_event_loop_thread_pool_test.cpp)
 target_link_libraries(net_event_loop_thread_pool_test tento)
 
-add_executable(net_acceptor_test net_acceptor_test.cpp)
-target_link_libraries(net_acceptor_test tento)
+add_executable(net_listener_test net_listener_test.cpp)
+target_link_libraries(net_listener_test tento)

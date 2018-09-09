@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <mutex>
-//#include <thread>
-
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
 #include "tento/base/Thread.hpp"

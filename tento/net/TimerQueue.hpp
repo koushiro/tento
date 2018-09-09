@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <functional>
 #include <set>
 
 #include "tento/base/Common.hpp"

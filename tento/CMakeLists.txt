@@ -36,8 +36,8 @@ set(TENTO_NET
         net/Buffer.hpp
         net/Socket.cpp
         net/Socket.hpp
-        net/Acceptor.cpp
-        net/Acceptor.hpp
+        net/Listener.cpp
+        net/Listener.hpp
 #        net/Connector.cpp
 #        net/Connector.hpp
         )
