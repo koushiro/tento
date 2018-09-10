@@ -25,10 +25,10 @@ int main() {
 
     Listener listener {&loop, SockAddr(9981)};
     listener.SetNewConnectionCallback(
-        [](Socket connSock, const SockAddr& peerAddr) {
+        [](Socket connSock, const SockAddr& remoteAddr) {
             std::string str("How are you?\n");
             write(connSock.Fd(), str.c_str(), str.length());
-            LOG_TRACE("Send packet over", "");
+            LOG_TRACE("Send packet over, remote address = {}", remoteAddr.ToIpAndPort());
         }
     );
     listener.Listen();

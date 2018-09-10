@@ -42,14 +42,14 @@ void Listener::Accept() {
     channel_->SetReadCallback([this]() {
         /// handle read event
         loop_->AssertInLoopThread();
-        SockAddr peerAddr;
-        Socket connSock = listenSocket_.Accept(peerAddr);
+        SockAddr remoteAddr;
+        Socket connSock = listenSocket_.Accept(remoteAddr);
         if (connSock.Fd() != -1) {
             LOG_TRACE("Listener::Accept, Accepted a new connection from {}",
-                peerAddr.ToIpAndPort());
+                      remoteAddr.ToIpAndPort());
             connSock.SetKeepAlive(true);
             if (newConnCallback_) {
-                newConnCallback_(std::move(connSock), peerAddr);
+                newConnCallback_(std::move(connSock), remoteAddr);
             }
         }
     });

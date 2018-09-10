@@ -18,7 +18,7 @@ class EventLoop;
 class Listener : NonCopyable {
 public:
     using NewConnectionCallback= std::function<
-        void (Socket sock, const SockAddr& peerAddr)
+        void (Socket connSock, const SockAddr& remoteAddr)
     >;
 
     Listener(EventLoop* loop, const SockAddr& listenAddr);
