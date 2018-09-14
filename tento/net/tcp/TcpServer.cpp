@@ -35,6 +35,7 @@ TcpServer::TcpServer(EventLoop* loop, const SockAddr& listenAddr,
 
 TcpServer::~TcpServer() {
     LOG_TRACE("TcpServer::~TcpServer", "");
+    Stop();
 }
 
 void TcpServer::Start() {
@@ -59,18 +60,41 @@ void TcpServer::Stop() {
     LOG_TRACE("TcpServer::Stop", "");
     assert(IsRunning());
     status_ = Status::kStopping;
-    loop_->RunInLoop([]() {
+    loop_->RunInLoop([this]() {
+        assert(loop_->IsInLoopThread());
+        listener_->Stop();
+        listener_.reset();
 
+        if (connections_.empty()) {
+            LOG_TRACE("no connections", "");
+            status_ = Status::kStopped;
+            return;
+        }
+
+        LOG_TRACE("close connections", "");
+        for (auto& pair : connections_) {
+            auto id = pair.first;
+            auto conn = pair.second;
+            if (conn->IsConnected()) {
+                LOG_TRACE("close connection id = {}", id);
+                conn->Close();
+            } else {
+                LOG_TRACE("Don't need to call Close for this Connection, "
+                          "it may be doing disconnecting. "
+                          "Connection id = {}, status = {}",
+                          id, conn->StatusToString());
+            }
+        }
     });
 }
 
 void TcpServer::handleNewConnection(Socket&& connSock, const SockAddr& remoteAddr) {
     LOG_TRACE("New connection socket fd = {}", connSock.Fd());
-    loop_->AssertInLoopThread();
+    assert(loop_->IsInLoopThread());
     assert(IsRunning());
 
     EventLoop* ioLoop = pool_->GetNextLoop();
-    ++nextConnId_;
+    ++nextConnId_;  /// From 1 to ...
     std::string name = name_ + "-" + remoteAddr.ToIpAndPort() +
         "#" + std::to_string(nextConnId_);
     TcpConnectionPtr conn = std::make_shared<TcpConnection>(
@@ -85,11 +109,13 @@ void TcpServer::handleNewConnection(Socket&& connSock, const SockAddr& remoteAdd
             // Remove the connection in the listening EventLoop.
             assert(loop_->IsInLoopThread());
             connections_.erase(conn->Id());
-
+            if (IsStopping() && connections_.empty()) {
+                status_ = Status::kStopped;
+            }
         };
-
         loop_->RunInLoop(callback);
     });
+//    ioLoop->RunInLoop(std::bind(&TcpConnection::OnAttachedToLoop, conn));
     connections_[conn->Id()] = conn;
 }
 

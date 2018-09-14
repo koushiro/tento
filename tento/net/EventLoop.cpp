@@ -81,7 +81,7 @@ EventLoop::~EventLoop() {
 }
 
 void EventLoop::Run() {
-    AssertInLoopThread();
+    assert(IsInLoopThread());
     status_ = Status::kStarting;
     LOG_TRACE("EventLoop::Run, EventLoop {} is starting looping", (void*)this);
 
@@ -174,13 +174,13 @@ void EventLoop::CancelTimer(TimerId timerId) {
 
 void EventLoop::UpdateChannel(Channel* channel) {
     assert(channel->OwnerLoop() == this);
-    AssertInLoopThread();
+    assert(IsInLoopThread());
     poller_->UpdateChannel(channel);
 }
 
 void EventLoop::RemoveChannel(Channel* channel) {
     assert(channel->OwnerLoop() == this);
-    AssertInLoopThread();
+    assert(IsInLoopThread());
     if (eventHandling_) {
         assert(std::find(activeChannels_.begin(), activeChannels_.end(), channel)
                == activeChannels_.end());
@@ -190,18 +190,6 @@ void EventLoop::RemoveChannel(Channel* channel) {
 
 void EventLoop::WakeUp() {
     EventFdWrite(eventFd_);
-}
-
-void EventLoop::AssertInLoopThread() {
-    if (!IsInLoopThread()) {
-        abortNotInLoopThread();
-    }
-}
-
-void EventLoop::abortNotInLoopThread() {
-    LOG_CRITICAL("EventLoop::abortNotInLoopThread, "
-                 "EventLoop {} was created in tid = {}, current tid = {}",
-                 (void*)this, tid_, thread_id());
 }
 
 NAMESPACE_END(net)

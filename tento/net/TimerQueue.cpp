@@ -112,7 +112,7 @@ void TimerQueue::CancelTimer(TimerId timerId) {
 }
 
 void TimerQueue::handleRead() {
-    ownerLoop_->AssertInLoopThread();
+    assert(ownerLoop_->IsInLoopThread());\
     TimerFdRead(timerFd_);
 
     Timestamp now = Timestamp::Now();

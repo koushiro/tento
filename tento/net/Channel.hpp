@@ -45,8 +45,8 @@ public:
 
 public:
     bool IsNoneEvent() const { return events_ == kNoneEvent; }
-    bool IsReading()   const { return static_cast<bool>(events_ & kReadEvent); }
-    bool IsWriting()   const { return static_cast<bool>(events_ & kWriteEvent); }
+    bool IsReadable()  const { return static_cast<bool>(events_ & kReadEvent); }
+    bool IsWritable()  const { return static_cast<bool>(events_ & kWriteEvent); }
 
     void EnableReadEvent()   { events_ |=  kReadEvent;  update(); }
     void DisableReadEvent()  { events_ &= ~kReadEvent;  update(); }

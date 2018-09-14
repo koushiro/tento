@@ -7,12 +7,14 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <string>
 #include <vector>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/Copyable.hpp"
 
 NAMESPACE_BEGIN(tento)
+NAMESPACE_BEGIN(net)
 
 /// A buffer class modeled after org.jboss.netty.buffer.ChannelBuffer
 ///
@@ -117,17 +119,32 @@ public:
 
     /// Read
 public:
-    void ReadBytes(size_t n) {
-        assert(n <= ReadableBytes());
-        if (n < ReadableBytes()) {
-            readIndex_ += n;
+    void ReadBytes(size_t len) {
+        assert(len <= ReadableBytes());
+        if (len < ReadableBytes()) {
+            readIndex_ += len;
         } else {
-            /// Read all readable bytes,
-            /// reset readIndex and writeIndex to kCheapPrependSize.
-            readIndex_ = kCheapPrependSize;
-            writeIndex_ = kCheapPrependSize;
+            ReadAllBytes();
         }
     }
+
+    void ReadAllBytes() {
+        /// Read all readable bytes,
+        /// reset readIndex and writeIndex to kCheapPrependSize.
+        readIndex_ = kCheapPrependSize;
+        writeIndex_ = kCheapPrependSize;
+    }
+
+//    std::string ReadBytesAsString(size_t len) {
+//        assert(len <= ReadableBytes());
+//        std::string res(ReadBegin(), len);
+//        ReadBytes(len);
+//        return res;
+//    }
+
+//    std::string ReadAllBytesAsString() {
+//        return ReadBytesAsString(ReadableBytes());
+//    }
 
     /// Read int64_t/int32_t/int16_t/int8_t with network endian
     int64_t ReadInt64() { int64_t p = PeekInt64(); ReadBytes(sizeof(p)); return p; }
@@ -159,6 +176,8 @@ public:
         return FindEOL(ReadBegin());
     }
 
+    ssize_t ReadFromFd(int fd, int* errorCode);
+
 private:
     const char* begin() const { return buffer_.data(); }
           char* begin()       { return buffer_.data(); }
@@ -182,11 +201,12 @@ private:
     }
 
 private:
+    static constexpr char kCRLF[] = "\r\n";
+
     std::vector<char> buffer_;
     size_t readIndex_;
     size_t writeIndex_;
-
-    static constexpr char kCRLF[] = "\r\n";
 };
 
+NAMESPACE_END(net)
 NAMESPACE_END(tento)

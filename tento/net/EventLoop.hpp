@@ -59,7 +59,6 @@ public:
     void CancelTimer(TimerId timerId);
 
 public:
-    void AssertInLoopThread();
     bool IsInLoopThread() const { return tid_ == thread_id(); }
 
     /// Internal Usage (Used by Channel).
@@ -70,7 +69,6 @@ public:
     void WakeUp();
 
 private:
-    void abortNotInLoopThread();
     void doPendingCallbacks();
 
 private:

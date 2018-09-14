@@ -31,7 +31,7 @@ Listener::~Listener() {
 
 void Listener::Listen(int n) {
     LOG_TRACE("Listener::Listen, {} connection requests will be queued", n);
-    loop_->AssertInLoopThread();
+    assert(loop_->IsInLoopThread());
     listening_ = true;
     listenSocket_.Listen(n);
 }
@@ -41,7 +41,7 @@ void Listener::Accept() {
 
     channel_->SetReadCallback([this]() {
         /// handle read event
-        loop_->AssertInLoopThread();
+        assert(loop_->IsInLoopThread());
         SockAddr remoteAddr;
         Socket connSock = listenSocket_.Accept(remoteAddr);
         if (connSock.Fd() != -1) {
