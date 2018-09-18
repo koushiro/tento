@@ -133,8 +133,7 @@ Socket Socket::Accept(SockAddr& peerAddr) {
     memset(&addr_in, 0, sizeof(addr_in));
     auto addr = static_cast<struct sockaddr*>(static_cast<void*>(&addr_in));
     auto addrLen = static_cast<socklen_t>(sizeof(struct sockaddr_in));
-    int connFd = accept4(sockFd_, addr, &addrLen,
-                         SOCK_NONBLOCK | SOCK_CLOEXEC); /// See man accept4
+    int connFd = accept4(sockFd_, addr, &addrLen, SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (connFd == -1) {
         auto errorCode = errno;
         LOG_CRITICAL("Socket::Accept - accept4() failed, "
@@ -155,7 +154,6 @@ Socket Socket::Accept(SockAddr& peerAddr) {
             case ENOTSOCK:      /// sockfd does not refer to a socket.
             case EOPNOTSUPP:    /// The referenced socket is not of type SOCK_STREAM.
             case EPROTO:        /// Protocol error.
-                abort();
             default:            /// Unknown error.
                 abort();
         }

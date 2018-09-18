@@ -12,14 +12,15 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
+/// RAII thread pool of EventLoopThread.
 class EventLoopThreadPool : NonCopyable, public ServerStatus {
 public:
     explicit EventLoopThreadPool(EventLoop* baseLoop, uint32_t numThread = 0);
     ~EventLoopThreadPool();
 
     /// @brief Stop all working thread manually.
-    /// If you forget to call this method,
-    /// it will be invoked automatically in the destructor.
+    /// You don't have to call this method, 
+    /// because it will be invoked automatically in the destructor.
     /// @note DO NOT call this method from any of the working thread.
     void Stop();
 

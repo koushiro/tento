@@ -11,11 +11,13 @@
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
-#include "tento/net/Channel.hpp"
-#include "tento/net/EventLoop.hpp"
+#include "tento/net/Alias.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
+
+class Channel;
+class EventLoop;
 
 /// I/O Multiplexing with epoll.
 class EPoller : NonCopyable {
@@ -23,17 +25,13 @@ public:
     explicit EPoller(EventLoop* loop);
     ~EPoller();
 
-    Timestamp Poll(int timeoutMs, ChannelList* activeChannels);
+    void Poll(int timeoutMs, ChannelList* activeChannels);
+
     void UpdateChannel(Channel* channel);
     void RemoveChannel(Channel* channel);
 
 private:
-    void epollControl(int op, Channel* channel);
-
-public:
-    static constexpr int kNew = -1;
-    static constexpr int kAdded = 1;
-    static constexpr int kDeleted = 2;
+    void control(int op, Channel* channel);
 
 private:
     static constexpr size_t kInitEventListSize = 16;
@@ -41,8 +39,6 @@ private:
     EventLoop* ownerLoop_;
     int epfd_;
     std::vector<struct epoll_event> events_;
-    // key - file description, value - channel.
-    std::map<int, Channel*> channels_;
 };
 
 NAMESPACE_END(net)

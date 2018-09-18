@@ -74,9 +74,9 @@ public:
     void Listen(int n = SOMAXCONN);
     Socket Accept(SockAddr& peerAddr);
 
-    /// Close socket manually.
-    /// If you forget to call this method,
-    /// it will be invoked automatically in the destructor.
+    /// @brief Close socket manually.
+    /// You don't have to call this method,
+    /// because it will be invoked automatically in the destructor.
     void Close();
 
 //    int Connect(const SockAddr& serverAddr);

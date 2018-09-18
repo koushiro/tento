@@ -5,6 +5,8 @@
 #include "tento/net/Listener.hpp"
 
 #include "tento/base/Logger.hpp"
+#include "tento/net/Channel.hpp"
+#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
@@ -56,7 +58,7 @@ void Listener::Accept() {
 
     channel_->EnableReadEvent();
 
-    LOG_TRACE("Server is running at {}", listenAddr_.ToIpAndPort());
+    LOG_TRACE("Listener is listening [{}]", listenAddr_.ToIpAndPort());
 }
 
 void Listener::Stop() {

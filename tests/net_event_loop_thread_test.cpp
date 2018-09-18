@@ -5,13 +5,6 @@
 #include <chrono>
 using namespace std::chrono_literals;
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY
-#endif
-#include "fmt/core.h"
-#include "fmt/format.h"
-#include "fmt/ostream.h"
-
 #include "tento/base/Logger.hpp"
 #include "tento/base/Thread.hpp"
 #include "tento/net/EventLoopThread.hpp"
@@ -23,12 +16,11 @@ int main() {
     Logger logger(Logger::LogKind::Both);
 
     auto print = [](EventLoop* loop) {
-        fmt::print("print(): tid = {}, loop = {}\n",
-            thread_id(), (void*)loop);
+        LOG_INFO("print() callback, loop = {}", (void*)loop);
     };
 
-    auto quit = [&](EventLoop* loop) {
-        print(loop);
+    auto quit = [](EventLoop* loop) {
+        LOG_INFO("quit() callback, loop = {}", (void*)loop);
         loop->Quit();
     };
 

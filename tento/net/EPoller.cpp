@@ -4,9 +4,9 @@
 
 #include "tento/net/EPoller.hpp"
 
-#include <unistd.h>
-
 #include "tento/base/Logger.hpp"
+#include "tento/net/Channel.hpp"
+#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
@@ -28,25 +28,22 @@ EPoller::~EPoller() {
     close(epfd_);
 }
 
-Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
+void EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
     int numReadyFd = epoll_wait(epfd_,
                                events_.data(),
                                static_cast<int>(events_.size()),
                                timeoutMs);
-    Timestamp now = Timestamp::Now();
+
     if (numReadyFd == -1) {
         auto errorCode = errno;
         LOG_ERROR("EPoller::Poll - epoll_wait() failed, "
                   "an error '{}' occurred", strerror(errorCode));
     } else if (numReadyFd == 0) {
-        LOG_TRACE("Nothing happened", numReadyFd == 0);
+        LOG_TRACE("Nothing happened", "");
     } else {
-        LOG_TRACE("Events happened, num of events = {}", numReadyFd);
+        LOG_TRACE("Events happened, num of ready fd = {}", numReadyFd);
         for (int i = 0; i < numReadyFd; ++i) {
             auto channel = static_cast<Channel*>(events_[i].data.ptr);
-            auto it = channels_.find(channel->Fd());
-            assert(it != channels_.end());
-            assert(it->second == channel);
             channel->SetRevents(events_[i].events);
             activeChannels->push_back(channel);
         }
@@ -54,69 +51,61 @@ Timestamp EPoller::Poll(int timeoutMs, ChannelList* activeChannels) {
             events_.resize(events_.size() * 2);
         }
     }
-    return now;
 }
 
 void EPoller::UpdateChannel(Channel* channel) {
     assert(ownerLoop_->IsInLoopThread());
-    int status = channel->Status();
+    auto status = channel->Status();
     LOG_TRACE("UpdateChannel, fd = {}, events = {}, status = {}",
               channel->Fd(), channel->EventsToString(), status);
-    if (status == kNew || status == kDeleted) {
-        // New channel, add the new channel to events_ with EPOLL_CTL_ADD.
-        if (status == kNew) {
-            assert(channels_.find(channel->Fd()) == channels_.end());
-            channels_[channel->Fd()] = channel;
-        } else {
-            assert(channels_.find(channel->Fd()) != channels_.end());
-            assert(channels_[channel->Fd()] == channel);
-        }
-        channel->SetStatus(kAdded);
-        epollControl(EPOLL_CTL_ADD, channel);
-    } else {
-        // Existed channel, update the existed channel in the events_.
-        assert(channels_.find(channel->Fd()) != channels_.end());
-        assert(channels_[channel->Fd()] == channel);
-        assert(status == kAdded);
-        if (channel->IsNoneEvent()) {
-            epollControl(EPOLL_CTL_DEL, channel);
-            channel->SetStatus(kDeleted);
-        } else {
-            epollControl(EPOLL_CTL_MOD, channel);
-        }
+
+    switch (status) {
+        case ChannelStatus::kAdded:
+            // it's an Added channel, update the existed channel in the events_.
+            if (channel->IsNoneEvent()) {
+                control(EPOLL_CTL_DEL, channel);
+                channel->SetStatus(ChannelStatus::kDeleted);
+            } else {
+                control(EPOLL_CTL_MOD, channel);
+            }
+            break;
+
+        case ChannelStatus::kNew:
+        case ChannelStatus::kDeleted:
+            // it's a New channel, add the new channel to events_.
+            control(EPOLL_CTL_ADD, channel);
+            channel->SetStatus(ChannelStatus::kAdded);
+            break;
     }
 }
 
 void EPoller::RemoveChannel(Channel* channel) {
     assert(ownerLoop_->IsInLoopThread());
     LOG_TRACE("RemoveChannel, fd = {}", channel->Fd());
-    assert(channels_.find(channel->Fd()) != channels_.end());
-    assert(channels_[channel->Fd()] == channel);
-    // Called UpdateChannel (set NoneEvent) before RemoveChannel.
     assert(channel->IsNoneEvent());
-    int status = channel->Status();
-    assert(status == kAdded || status == kDeleted);
-    size_t num = channels_.erase(channel->Fd());
-    assert(num == 1);
 
-    if (status == kAdded) {
-        epollControl(EPOLL_CTL_DEL, channel);
+    auto status = channel->Status();
+    assert(status == ChannelStatus::kAdded || status == ChannelStatus::kDeleted);
+
+    if (status == ChannelStatus::kAdded) {
+        control(EPOLL_CTL_DEL, channel);
     }
-    channel->SetStatus(kNew);
+    channel->SetStatus(ChannelStatus::kNew);
 }
 
-void EPoller::epollControl(int op, Channel* channel) {
+void EPoller::control(int op, Channel* channel) {
     struct epoll_event event;
     memset(&event, 0, sizeof(event));
     event.events = static_cast<uint32_t>(channel->Events());
     event.data.ptr = channel;
-    LOG_TRACE("epollControl operation = {} (ADD:1, DEL:2, MOD:3), "
+
+    LOG_TRACE("control operation = {} (ADD:1, DEL:2, MOD:3), "
               "fd = {}, event = {}",
               op, channel->Fd(), channel->EventsToString());
     int ret = epoll_ctl(epfd_, op, channel->Fd(), &event);
     if (ret == -1) {
         auto errorCode = errno;
-        LOG_CRITICAL("EPoller::epollControl - epoll_ctl() failed, "
+        LOG_CRITICAL("EPoller::control - epoll_ctl() failed, "
                      "an error '{}' occurred", strerror(errorCode));
     }
 }

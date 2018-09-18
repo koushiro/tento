@@ -11,12 +11,13 @@
 #include "tento/base/NonCopyable.hpp"
 #include "tento/base/Timestamp.hpp"
 #include "tento/net/Alias.hpp"
-#include "tento/net/Channel.hpp"
-#include "tento/net/EventLoop.hpp"
 #include "tento/net/Timer.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
+
+class Channel;
+class EventLoop;
 
 class TimerQueue : NonCopyable {
 public:

@@ -4,14 +4,17 @@
 
 #pragma once
 
+#include <functional>
+#include <memory>
+
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
-#include "tento/net/Channel.hpp"
 #include "tento/net/Socket.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
+class Channel;
 class EventLoop;
 
 /// Tcp Listener.
@@ -27,12 +30,12 @@ public:
     /// socket listen.
     void Listen(int n = SOMAXCONN);
 
-    /// non-blocking accept.
+    /// non-blocking accept (using accept4).
     void Accept();
 
     /// @brief Stop Listener manually.
-    /// If you forget to call this method,
-    /// it will be invoked automatically in the destructor.
+    /// You don't have to call this method,
+    /// because it will be invoked automatically in the destructor.
     /// @note DO NOT call this method from other thread.
     void Stop();
 

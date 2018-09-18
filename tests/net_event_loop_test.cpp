@@ -11,22 +11,30 @@ using namespace tento;
 using namespace tento::net;
 
 int main() {
-    Logger logger(Logger::LogKind::Both);   /// file log?????
+    Logger logger(Logger::LogKind::Both);
 
-    LOG_INFO("main(): tid = {}", thread_id());
+    LOG_INFO("main thread = {} start", thread_id());
     EventLoop mainLoop;
+    mainLoop.RunAfter(Duration::FromSecs(20), [&mainLoop](){
+        LOG_INFO("loop = {}, RunAfter callback",
+            (void*)&mainLoop,  thread_id());
+        mainLoop.Quit();
+    });
 
-    auto thread = std::thread([]() {
-        LOG_INFO("thread(): tid = {}", thread_id());
+    auto thread = Thread([]() {
+        LOG_INFO("other thread = {} start", thread_id());
         EventLoop threadLoop;
-        threadLoop.RunAfter(Duration::FromSecs(5), []() {
-            LOG_INFO("RunAfter callback tid = {}", thread_id());
-//           EventLoop anotherLoop;
+        threadLoop.RunAfter(Duration::FromSecs(25), [&threadLoop]() {
+            LOG_INFO("loop = {}, RunAfter callback",
+                (void*)&threadLoop, thread_id());
+            threadLoop.Quit();
         });
         threadLoop.Run();
+        LOG_INFO("other thread = {} stop", thread_id());
     });
 
     mainLoop.Run();
+    LOG_INFO("main thread = {} stop", thread_id());
 
     return 0;
 }

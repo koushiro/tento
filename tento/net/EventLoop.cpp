@@ -88,11 +88,11 @@ void EventLoop::Run() {
     while (!IsStopping()) {
         status_ = Status::kRunning;
         activeChannels_.clear();
-        pollReturnTime_ = poller_->Poll(kPollTimeMs, &activeChannels_);
+        poller_->Poll(kPollTimeMs, &activeChannels_);
 
         eventHandling_ = true;
         for (auto channel : activeChannels_) {
-            channel->HandleEvent(pollReturnTime_);
+            channel->HandleEvent();
         }
         eventHandling_ = false;
         /// Do pending callbacks from QueueInLoop().
@@ -120,7 +120,6 @@ void EventLoop::doPendingCallbacks() {
 
 void EventLoop::Quit() {
     LOG_TRACE("EventLoop::Quit(), status = {}", StatusToString());
-//    assert(IsStarting() || IsRunning() || IsStopped() || IsStopping());
     if (IsStopping() || IsStopped()) return;
     status_ = Status::kStopping;
     LOG_TRACE("EventLoop::Quit(), EventLoop {} is stopping looping", (void*)this);

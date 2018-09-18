@@ -11,6 +11,7 @@
 
 #include "tento/base/Logger.hpp"
 #include "tento/base/Thread.hpp"
+#include "tento/net/EventLoop.hpp"
 #include "tento/net/Listener.hpp"
 
 using namespace tento;
@@ -19,7 +20,7 @@ using namespace tento::net;
 int main() {
     Logger logger(Logger::LogKind::Both);
 
-    fmt::print("main(): tid = {}\n", thread_id());
+    LOG_INFO("main thread");
 
     EventLoop loop;
 
@@ -28,7 +29,7 @@ int main() {
         [](Socket connSock, const SockAddr& remoteAddr) {
             std::string str("How are you?\n");
             write(connSock.Fd(), str.c_str(), str.length());
-            LOG_TRACE("Send packet over, remote address = {}", remoteAddr.ToIpAndPort());
+            LOG_INFO("Send packet over, remote address = {}", remoteAddr.ToIpAndPort());
         }
     );
     listener.Listen();

@@ -4,20 +4,35 @@
 
 #pragma once
 
+#include <sys/epoll.h>
+
 #include <functional>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <vector>
-
-#include <sys/epoll.h>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/NonCopyable.hpp"
-#include "tento/base/Timestamp.hpp"
-#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
+
+enum class ChannelStatus {
+    kNew = -1,      /// New channel, initial status.
+    kAdded = 1,     /// Added channel.
+    kDeleted = 2,   /// Deleted channel.
+};
+
+inline std::ostream& operator<<(std::ostream& os, ChannelStatus status) {
+    switch (status) {
+        case ChannelStatus::kNew:     return os << "kNew";
+        case ChannelStatus::kAdded:   return os << "kAdded";
+        case ChannelStatus::kDeleted: return os << "kDeleted";
+    }
+}
+
+class EventLoop;
 
 /// A selectable I/O channel.
 /// Channel class doesn't own the file description.
@@ -25,80 +40,62 @@ NAMESPACE_BEGIN(net)
 class Channel : NonCopyable {
 public:
     using EventCallback = std::function<void ()>;
-    
+
     Channel(EventLoop* loop, int fd);
     ~Channel();
 
-    void SetReadCallback(EventCallback cb)  { readCallback_ = std::move(cb); }
+    void HandleEvent();
+
+    void SetReadCallback(EventCallback cb)  { readCallback_  = std::move(cb); }
     void SetWriteCallback(EventCallback cb) { writeCallback_ = std::move(cb); }
-    void SetCloseCallback(EventCallback cb) { closeCallback_ = std::move(cb); }
     void SetErrorCallback(EventCallback cb) { errorCallback_ = std::move(cb); }
+    void SetCloseCallback(EventCallback cb) { closeCallback_ = std::move(cb); }
 
-public:
-    void HandleEvent(Timestamp when);
-private:
-    void handleEventWithGuard();
+    bool IsNoneEvent() const { return events_ == kNone; }
+    bool IsReadable()  const { return static_cast<bool>(events_ & kRead); }
+    bool IsWritable()  const { return static_cast<bool>(events_ & kWrite); }
 
-public:
-    ///
-//    void Tie(const std::shared_ptr<void>&);
+    void EnableReadEvent()   { events_ |=  kRead;  update(); }
+    void DisableReadEvent()  { events_ &= ~kRead;  update(); }
+    void EnableWriteEvent()  { events_ |=  kWrite; update(); }
+    void DisableWriteEvent() { events_ &= ~kWrite; update(); }
+    void DisableAllEvents()  { events_ =   kNone;  update(); }
 
-public:
-    bool IsNoneEvent() const { return events_ == kNoneEvent; }
-    bool IsReadable()  const { return static_cast<bool>(events_ & kReadEvent); }
-    bool IsWritable()  const { return static_cast<bool>(events_ & kWriteEvent); }
-
-    void EnableReadEvent()   { events_ |=  kReadEvent;  update(); }
-    void DisableReadEvent()  { events_ &= ~kReadEvent;  update(); }
-    void EnableWriteEvent()  { events_ |=  kWriteEvent; update(); }
-    void DisableWriteEvent() { events_ &= ~kWriteEvent; update(); }
-    void DisableAllEvents()  { events_ =   kNoneEvent;  update(); }
+    void Remove();  // Must call DisableAll() before calling Remove().
 
 private:
     void update();
-public:
-    void Remove();  // Must be called after calling DisableAll().
 
 public:
-    EventLoop* OwnerLoop()            { return ownerLoop_; }
-    int  Fd()                   const { return fd_; }
-    int  Events()               const { return events_; }
-    void SetRevents(int revents)      { revents_ = revents; }
+    // Getter and setter
+    EventLoop* OwnerLoop()                { return ownerLoop_; }
+    int  Fd()                       const { return fd_; }
+    int  Events()                   const { return events_; }
+    void SetRevents(int revents)          { revents_ = revents; }
+    ChannelStatus  Status()         const { return status_; }
+    void SetStatus(ChannelStatus status)  { status_  = status; }
 
-    /// Used to judge whether the channel is a new one for Poller.
-    /// index == -1: New channel.
-    /// index > 0  : Existed channel.
-    int  Status()                const { return status_; }
-    void SetStatus(int status)         { status_  = status; }
-
-    /// For debug.
-public:
-    std::string ReventsToString() const;
+    // For debug.
     std::string EventsToString() const;
-private:
-    static std::string eventsToString(int fd, int ev);
 
 private:
-    static constexpr int kNoneEvent = 0;
-    static constexpr int kReadEvent = EPOLLIN | EPOLLPRI;
-    static constexpr int kWriteEvent = EPOLLIN | EPOLLPRI;
+    enum EventStatus {
+        kNone = 0,
+        kRead = EPOLLIN | EPOLLPRI,
+        kWrite = EPOLLOUT,
+    };
 
-private:
-    EventLoop*  ownerLoop_; /// The EventLoop to which the channel belongs.
-    const int   fd_;        /// File description, the channel isn't responsible for closing it.
-    int         events_;    /// Concerned events.
-    int         revents_;   /// The event returned by epoll.
-    int         status_;    /// For EPoller.
-    bool        logHup_;    /// For EPOLLHUP
+    EventLoop* ownerLoop_; /// The EventLoop to which the channel belongs.
+    const int  fd_;        /// File description, the channel isn't responsible for closing it.
 
-//    std::weak_ptr<void> tie_;
-//    bool                tied_;
+    int events_;           /// User's Concerned events status (readable, writable, none).
+    int revents_;          /// The event status returned by epoll.
+    ChannelStatus status_; /// For EPoller.
 
-    bool          eventHandling_; /// The flag whether is currently in the event handling.
     EventCallback readCallback_;
     EventCallback writeCallback_;
-    EventCallback closeCallback_;
     EventCallback errorCallback_;
+    EventCallback closeCallback_;
 };
 
 NAMESPACE_END(net)

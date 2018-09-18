@@ -9,6 +9,7 @@
 #include <string>
 
 #include "tento/base/Logger.hpp"
+#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
@@ -18,41 +19,33 @@ Channel::Channel(EventLoop* loop, int fd)
       fd_(fd),
       events_(0),
       revents_(0),
-      status_(-1),          /// EPoller::kNew
-      logHup_(true),
-//      tied_(false),
-      eventHandling_(false)
+      status_(ChannelStatus::kNew)
 {
 }
 
 Channel::~Channel() {
-    assert(!eventHandling_);
+
 }
 
-void Channel::HandleEvent(Timestamp when) {
-
-    // call handleEventWithGuard()
-    handleEventWithGuard();
-}
-
-void Channel::handleEventWithGuard() {
-    eventHandling_  = true;
-    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
-        if (logHup_) {
-            LOG_WARN("fd = {} Channel::handleEventWithGuard() EPOLLHUP", fd_);
-        }
-        if (closeCallback_) closeCallback_();
+void Channel::HandleEvent() {
+    // see man `epoll_ctl`
+    // TODO: specific comment
+    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN) && closeCallback_) {
+        closeCallback_();
     }
-    if (revents_ & EPOLLERR) {
-        if (errorCallback_) errorCallback_();
+    // TODO: specific comment
+    if ((revents_ & EPOLLERR) && errorCallback_) {
+        errorCallback_();
     }
-    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
-        if (readCallback_) readCallback_();
+    // TODO: specific comment
+    if ((revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) && readCallback_) {
+        readCallback_();
     }
-    if (revents_ & EPOLLOUT) {
-        if (writeCallback_) writeCallback_();
+    // 当某次write写满发送缓冲区，errno为EAGAIN;
+    // 对端接受了部分数据，发送缓冲区又可写了，触发EPOLLOUT
+    if ((revents_ & EPOLLOUT) && writeCallback_) {
+        writeCallback_();
     }
-    eventHandling_ = false;
 }
 
 void Channel::update() {
@@ -64,36 +57,15 @@ void Channel::Remove() {
     ownerLoop_->RemoveChannel(this);
 }
 
-//
-//void Channel::Tie(const std::shared_ptr<void>& obj) {
-//    tie_ = obj;
-//    tied_ = true;
-//}
-
-std::string Channel::ReventsToString() const {
-    return eventsToString(fd_, revents_);
-}
-
 std::string Channel::EventsToString() const {
-    return eventsToString(fd_, events_);
-}
-
-std::string Channel::eventsToString(int fd, int ev) {
     std::ostringstream oss;
-    oss << fd << " : ";
-    if (ev & EPOLLIN)
-        oss << "IN ";
-    if (ev & EPOLLPRI)
-        oss << "PRI ";
-    if (ev & EPOLLOUT)
-        oss << "OUT ";
-    if (ev & EPOLLHUP)
-        oss << "HUP ";
-    if (ev & EPOLLRDHUP)
-        oss << "RDHUP ";
-    if (ev & EPOLLERR)
-        oss << "ERR ";
-    return oss.str().c_str();
+    if (events_ & EPOLLIN)      oss << "IN ";
+    if (events_ & EPOLLPRI)     oss << "PRI ";
+    if (events_ & EPOLLOUT)     oss << "OUT ";
+    if (events_ & EPOLLHUP)     oss << "HUP ";
+    if (events_ & EPOLLRDHUP)   oss << "RDHUP ";
+    if (events_ & EPOLLERR)     oss << "ERR ";
+    return oss.str();
 }
 
 NAMESPACE_END(net)

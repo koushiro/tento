@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 #include "tento/base/Logger.hpp"
+#include "tento/net/Channel.hpp"
+#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
@@ -35,6 +37,7 @@ void TimerFdSet(int timerfd, Timestamp when) {
     ts.tv_sec = duration.SecsPart();
     ts.tv_nsec = duration.SubSecNanos();
     newValue.it_value = ts;
+
     int ret = timerfd_settime(timerfd, 0, &newValue, &oldValue);
     if (ret == -1) {
         auto errorCode = errno;

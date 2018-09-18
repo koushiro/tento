@@ -75,11 +75,10 @@ private:
     static constexpr int kPollTimeMs = 10000;   /// 10 seconds;
 
 private:
-    size_t tid_;    /// consistent with spdlog thread id format, see OS.h.
+    size_t tid_;    /// consistent with spdlog thread id format.
 
     std::atomic_bool eventHandling_;
 
-    Timestamp pollReturnTime_;
     std::unique_ptr<EPoller> poller_;
     ChannelList activeChannels_;    /// active channels that returned from poller.
 
