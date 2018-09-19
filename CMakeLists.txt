@@ -7,22 +7,29 @@ set(CMAKE_CXX_FLAGS "--std=c++14 -g -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
-# 3rd party dependencies -------------------------------------------------------
+include_directories(${PROJECT_SOURCE_DIR})
+
+# ------------------------------------------------------------------------------
+# 3rd party dependencies
+# ------------------------------------------------------------------------------
 set(DEPS_DIR ${PROJECT_SOURCE_DIR}/deps)
 # include fmt/include directory
 include_directories(${DEPS_DIR}/fmt/include)
 # include spdlog/include directory
 include_directories(${DEPS_DIR}/spdlog/include)
-# Add the google test subdirectory
+# Add the google test subdirectory (need to move generated lib to target/lib)
 add_subdirectory(${DEPS_DIR}/googletest)
 # include googltest/include directory.
 include_directories(${DEPS_DIR}/googletest/googletest/include)
 # include googlmock/include drectory
 include_directories(${DEPS_DIR}/googletest/googlemock/include)
 
-# tento ------------------------------------------------------------------------
-include_directories(${PROJECT_SOURCE_DIR})
+# ------------------------------------------------------------------------------
+# tento
+# ------------------------------------------------------------------------------
 add_subdirectory(tento)
 
-# tests -----------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# tests
+# ------------------------------------------------------------------------------
 add_subdirectory(tests)

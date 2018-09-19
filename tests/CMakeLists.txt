@@ -1,34 +1,25 @@
-include_directories(${PROJECT_SOURCE_DIR}/build/lib)
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
+include_directories(${PROJECT_SOURCE_DIR}/target/lib)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/target/bin)
+set(DEPENDENT_LIBRARIES tento gtest gtest_main)
 
-# Base classes tests
-add_executable(base_count_down_latch_test base_count_down_latch_test.cpp)
-target_link_libraries(base_count_down_latch_test tento)
+set(TEST_FILES
+        # base
+        test_count_down_latch.cpp
+        test_duration.cpp
+        test_logger.cpp
+        test_thread.cpp
+        test_timestamp.cpp
 
-add_executable(base_duration_test base_duration_test.cpp)
-target_link_libraries(base_duration_test tento)
+        # net
+        test_listener.cpp
+        test_event_loop.cpp
+        test_event_loop_thread.cpp
+        test_event_loop_thread_pool.cpp
+        test_timer.cpp
+        )
 
-add_executable(base_logger_test base_logger_test.cpp)
-target_link_libraries(base_logger_test tento)
-
-add_executable(base_thread_test base_thread_test.cpp)
-target_link_libraries(base_thread_test tento)
-
-add_executable(base_timestamp_test base_timestamp_test.cpp)
-target_link_libraries(base_timestamp_test tento)
-
-# Net classes tests.
-add_executable(net_event_loop_test net_event_loop_test.cpp)
-target_link_libraries(net_event_loop_test tento)
-
-add_executable(net_timer_test net_timer_test.cpp)
-target_link_libraries(net_timer_test tento)
-
-add_executable(net_event_loop_thread_test net_event_loop_thread_test.cpp)
-target_link_libraries(net_event_loop_thread_test tento)
-
-add_executable(net_event_loop_thread_pool_test net_event_loop_thread_pool_test.cpp)
-target_link_libraries(net_event_loop_thread_pool_test tento)
-
-add_executable(net_listener_test net_listener_test.cpp)
-target_link_libraries(net_listener_test tento)
+foreach(test_file ${TEST_FILES})
+    get_filename_component(test_name ${test_file} NAME_WE)
+    add_executable(${test_name} ${test_file})
+    target_link_libraries(${test_name} ${DEPENDENT_LIBRARIES})
+endforeach()

@@ -2,13 +2,6 @@
 // Created by koushiro on 9/4/18.
 //
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY
-#endif
-#include "fmt/core.h"
-#include "fmt/format.h"
-#include "fmt/ostream.h"
-
 #include "tento/base/Logger.hpp"
 #include "tento/base/Thread.hpp"
 #include "tento/net/EventLoop.hpp"

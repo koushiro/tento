@@ -1,4 +1,4 @@
-set(LIBRARY_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/build/lib)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/target/lib)
 
 set(TENTO_BASE
         base/Common.hpp
@@ -39,10 +39,10 @@ set(TENTO_NET
         )
 
 set(TENTO_NET_TCP
-#        net/tcp/TcpConnection.cpp
-#        net/tcp/TcpConnection.hpp
-#        net/tcp/TcpServer.cpp
-#        net/tcp/TcpServer.hpp
+        net/tcp/TcpConnection.cpp
+        net/tcp/TcpConnection.hpp
+        net/tcp/TcpServer.cpp
+        net/tcp/TcpServer.hpp
 #        net/tcp/TcpClient.cpp
 #        net/tcp/TcpClient.hpp
         )

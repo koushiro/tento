@@ -25,7 +25,6 @@ public:
     static constexpr uint32_t SECS_PER_HOUR = 3600;
 
 public:
-    Duration() : secs_(0), nanos_(0) {}
     explicit Duration(uint64_t secs, uint32_t nanos)
         : secs_(secs), nanos_(nanos) {}
     ~Duration() = default;

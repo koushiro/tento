@@ -6,9 +6,14 @@
 
 #include "tento/base/Logger.hpp"
 #include "tento/net/Channel.hpp"
+#include "tento/net/EventLoop.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
+
+// True if err is an error that means a read/write operation can be retried
+#define ERR_RW_RETRIABLE(err) \
+    ((err) == EINTR || (err) == EAGAIN)
 
 TcpConnection::TcpConnection(EventLoop* ioLoop,
                              uint64_t id,
@@ -22,20 +27,23 @@ TcpConnection::TcpConnection(EventLoop* ioLoop,
       socket_(std::make_unique<Socket>(std::move(connSock))),
       channel_(std::make_unique<Channel>(loop_, socket_->Fd())),
       localAddr_(localAddr),
-      remoteAddr_(remoteAddr)
+      remoteAddr_(remoteAddr),
+      type_(TcpConnType::kIncoming),
+      status_(TcpConnStatus::kDisconnected)
 {
-    LOG_TRACE("TcpConnection::TcpConnection, addr = {}", AddrToString());
     channel_->SetReadCallback ([this]() { handleRead();  });
     channel_->SetWriteCallback([this]() { handleWrite(); });
-    channel_->SetCloseCallback([this]() { handleClose(); });
     channel_->SetErrorCallback([this]() { handleError(); });
+    channel_->SetCloseCallback([this]() { handleClose(); });
+    LOG_TRACE("TcpConnection::TcpConnection, fd = {}, {}",
+              socket_->Fd(), AddrToString());
     socket_->SetKeepAlive(true);
 }
 
 TcpConnection::~TcpConnection() {
-    LOG_TRACE("TcpConnection::~TcpConnection, status = {}, addr = {}",
-        StatusToString(), AddrToString());
-    assert(status_ == Status::kDisconnected);
+    LOG_TRACE("TcpConnection::~TcpConnection, fd = {}, status = {}, type = {}, {}",
+              socket_->Fd(), ConnStatusToString(), ConnTypeToString(), AddrToString());
+    assert(status_ == TcpConnStatus::kDisconnected);
 }
 
 void TcpConnection::Send(const void* message, size_t len) {
@@ -79,8 +87,8 @@ void TcpConnection::sendInLoop(const void* message, size_t len) {
     ssize_t written = 0;
     size_t remain = len;
 
-    // if no data in output queue, writing directly.
-    if (!channel_->IsWritable() && outputBuf_.ReadableBytes() == 0) {
+    // if no data in output queue, try writing directly.
+    if (!channel_->IsWritable() && sendBuf_.ReadableBytes() == 0) {
         written = send(channel_->Fd(), message, len, MSG_NOSIGNAL);
         if (written == -1) {
             auto errorCode = errno;
@@ -88,30 +96,31 @@ void TcpConnection::sendInLoop(const void* message, size_t len) {
                       "an error '{}' was occurred", strerror(errorCode));
             handleError();
             return;
-//            if (errorCode == EPIPE || errorCode == ECONNRESET) {
-//                handleError();
-//                return;
-//            }
         } else {    // write successfully.
             remain -= written;
             if (remain == 0 && writeCompleteCallback_) {
-                loop_->QueueInLoop([this]() {
-                    writeCompleteCallback_(shared_from_this());
-                });
+                loop_->QueueInLoop([this]() { writeCompleteCallback_(shared_from_this()); });
             }
         }
     }
 
+    // if only part of message is sent, put the remaining data into send buffer.
     if (remain > 0) {
-        size_t oldLen = outputBuf_.ReadableBytes();
-        auto mark = oldLen + remain;
-        if (mark >= highWaterMark_ && oldLen < highWaterMark_ && highWaterMarkCallback_) {
-            loop_->QueueInLoop([this, mark]() {
-                highWaterMarkCallback_(shared_from_this(), mark);
+        // If the length of the send buffer exceeds the highWaterMark_(user-specified size),
+        // a callback is triggered (only once on the rising edge).
+        size_t oldMark = sendBuf_.ReadableBytes();
+        auto newMark = oldMark + remain;
+        if (oldMark < highWaterMark_ && newMark >= highWaterMark_ && highWaterMarkCallback_) {
+            loop_->QueueInLoop([this, newMark]() {
+                highWaterMarkCallback_(shared_from_this(), newMark);
             });
         }
 
-        outputBuf_.Append(static_cast<const char*>(message) + written, remain);
+        // put the remaining data into send buffer
+        sendBuf_.Append(static_cast<const char*>(message) + written, remain);
+
+        // start watching the writable event of the channel,
+        // send remaining data in handleWrite() when the writable event comes   .
         if (!channel_->IsWritable()) {
             channel_->EnableWriteEvent();
         }
@@ -119,9 +128,9 @@ void TcpConnection::sendInLoop(const void* message, size_t len) {
 }
 
 void TcpConnection::Close() {
-    LOG_TRACE("TcpConnection::Close, fd = {}, status = {}, addr = ",
-        socket_->Fd(), StatusToString(), AddrToString());
-    status_ = Status::kDisconnecting;
+    LOG_TRACE("TcpConnection::Close, fd = {}, status = {}, type = {}, {}",
+        socket_->Fd(), ConnStatusToString(), ConnTypeToString(), AddrToString());
+    status_ = TcpConnStatus::kDisconnecting;
 
     auto conn = shared_from_this();
     loop_->QueueInLoop([conn]() {
@@ -135,15 +144,16 @@ void TcpConnection::Close() {
 void TcpConnection::handleRead() {
     assert(loop_->IsInLoopThread());
     LOG_TRACE("TcpConnection::handleWrite， fd = {}, status = {}",
-              socket_->Fd(), StatusToString());
+              socket_->Fd(), ConnStatusToString());
+
     int errorCode = 0;
-    ssize_t n = inputBuf_.ReadFromFd(channel_->Fd(), &errorCode);
+    ssize_t n = recvBuf_.ReadFromFd(channel_->Fd(), &errorCode);
     if (n < 0) {
         LOG_ERROR("Input buffer ReadFromFd failed, an error '{}' was occurred",
             strerror(errorCode));
         handleError();
     } else if (n > 0) {
-        messageCallback_(shared_from_this(), &inputBuf_);
+        messageCallback_(shared_from_this(), &recvBuf_);
     } else {    // n == 0
         handleClose();
     }
@@ -152,34 +162,47 @@ void TcpConnection::handleRead() {
 void TcpConnection::handleWrite() {
     assert(loop_->IsInLoopThread());
     assert(channel_->IsWritable());
-    LOG_TRACE("TcpConnection::handleWrite， fd = {}, status = {}",
-              socket_->Fd(), StatusToString());
-    ssize_t n = send(channel_->Fd(), outputBuf_.ReadBegin(), outputBuf_.ReadableBytes(), MSG_NOSIGNAL);
+    LOG_TRACE("TcpConnection::handleWrite， fd = {}, status = {}, {}",
+              socket_->Fd(), ConnStatusToString(), AddrToString());
+
+    ssize_t n = send(channel_->Fd(),
+        sendBuf_.ReadBegin(), sendBuf_.ReadableBytes(), MSG_NOSIGNAL);
     if (n == -1) {
         auto errorCode = errno;
         LOG_ERROR("TcpConnection::handleWrite, send failed, "
                   "an error '{}' was occurred", strerror(errorCode));
         handleError();
     } else {
-        outputBuf_.ReadBytes(n);
-        if (outputBuf_.ReadableBytes() == 0) {
+        // Continue to send data in the send buffer.
+        // Once the sending process is complete,
+        // stop watching the writable event immediately, avoiding the busy loop.
+        sendBuf_.ReadBytes(static_cast<size_t>(n));
+
+        if (sendBuf_.ReadableBytes() == 0) {
             channel_->DisableWriteEvent();
             if (writeCompleteCallback_) {
-                loop_->QueueInLoop([this]() {
-                    writeCompleteCallback_(shared_from_this());
-                });
+                loop_->QueueInLoop([this]() { writeCompleteCallback_(shared_from_this()); });
             }
         }
     }
 }
 
+void TcpConnection::handleError() {
+    LOG_TRACE("TcpConnection::handleError， fd = {}, status = {}",
+              socket_->Fd(), ConnStatusToString());
+    status_ = TcpConnStatus::kDisconnecting;
+    handleClose();
+}
+
 void TcpConnection::handleClose() {
     if (IsDisconnected()) return;
 
+    status_ = TcpConnStatus::kDisconnecting;
+
     assert(loop_->IsInLoopThread());
-    status_ = Status::kDisconnecting;
     LOG_TRACE("TcpConnection::handleClose， fd = {}, status = {}",
-              socket_->Fd(), StatusToString());
+              socket_->Fd(), ConnStatusToString());
+
     channel_->DisableAllEvents();
 
     TcpConnectionPtr conn(shared_from_this());
@@ -189,14 +212,7 @@ void TcpConnection::handleClose() {
     if (closeCallback_) {
         closeCallback_(conn);
     }
-    status_ = Status::kDisconnected;
-}
-
-void TcpConnection::handleError() {
-    LOG_TRACE("TcpConnection::handleError， fd = {}, status = {}",
-        socket_->Fd(), StatusToString());
-    status_ = Status::kDisconnecting;
-    handleClose();
+    status_ = TcpConnStatus::kDisconnected;
 }
 
 NAMESPACE_END(net)

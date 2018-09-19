@@ -107,6 +107,14 @@ private:
         .append("#").append(std::to_string(__LINE__))\
         .append("]").c_str()
 
+#ifdef TURN_OFF_LOG
+#define LOG_TRACE(msg, ...)
+#define LOG_DEBUG(msg, ...)
+#define LOG_INFO(...)
+#define LOG_WARN(...)
+#define LOG_ERROR(...)
+#define LOG_CRITICAL(...)
+#else
 #define LOG_TRACE(msg, ...) \
     spdlog::get(LOGGER_NAME)->trace(__SUFFIX__(msg), __VA_ARGS__)
 #define LOG_DEBUG(msg, ...) \
@@ -119,5 +127,6 @@ private:
     spdlog::get(LOGGER_NAME)->error(__VA_ARGS__)
 #define LOG_CRITICAL(...) \
     spdlog::get(LOGGER_NAME)->critical(__VA_ARGS__)
+#endif
 
 NAMESPACE_END(tento)

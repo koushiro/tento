@@ -5,13 +5,6 @@
 #include <chrono>
 using namespace std::chrono_literals;
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY
-#endif
-#include "fmt/core.h"
-#include "fmt/format.h"
-#include "fmt/ostream.h"
-
 #include "tento/base/Logger.hpp"
 #include "tento/base/Thread.hpp"
 #include "tento/net/EventLoopThreadPool.hpp"

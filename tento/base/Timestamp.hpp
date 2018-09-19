@@ -13,7 +13,6 @@ NAMESPACE_BEGIN(tento)
 
 class Timestamp : Copyable {
 public:
-    Timestamp() : nanos_(0) {}
     explicit Timestamp(uint64_t nanos) : nanos_(nanos) {}
     ~Timestamp() = default;
     Timestamp(const Timestamp&) = default;
@@ -79,6 +78,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Timestamp& timestamp);
 
 private:
+    Timestamp() : nanos_(0) {}
     /// ns_ gives the number of nanoseconds elapsed since the Epoch
     /// 1970-01-01 00:00:00 +0000 (UTC).
     uint64_t nanos_;

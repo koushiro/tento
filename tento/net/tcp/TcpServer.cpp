@@ -7,13 +7,17 @@
 #include "tento/base/Logger.hpp"
 #include "tento/net/Listener.hpp"
 #include "tento/net/EventLoopThreadPool.hpp"
-#include "TcpServer.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-inline void DefaultConnectionCallback(const TcpConnectionPtr&) {}
-inline void DefaultMessageCallback(const TcpConnectionPtr&, Buffer*) {}
+void DefaultConnectionCallback(const TcpConnectionPtr& conn) {
+//    LOG_TRACE("{}", conn->AddrToString());
+}
+
+void DefaultMessageCallback(const TcpConnectionPtr& conn, Buffer* buffer) {
+    buffer->ReadAllBytes();
+}
 
 TcpServer::TcpServer(EventLoop* loop, const SockAddr& listenAddr,
                      const std::string& name, uint32_t numThread)
@@ -28,7 +32,7 @@ TcpServer::TcpServer(EventLoop* loop, const SockAddr& listenAddr,
 {
     LOG_TRACE("TcpServer::TcpServer, "
               "name = {}, listening address = {}, num of thread = {}",
-              name_, listenAddr_, numThread_);
+              name_, listenAddr_.ToIpAndPort(), numThread_);
     listener_->Listen();
     assert(listener_->IsListening());
 }
@@ -82,7 +86,7 @@ void TcpServer::Stop() {
                 LOG_TRACE("Don't need to call Close for this Connection, "
                           "it may be doing disconnecting. "
                           "Connection id = {}, status = {}",
-                          id, conn->StatusToString());
+                          id, conn->ConnStatusToString());
             }
         }
     });

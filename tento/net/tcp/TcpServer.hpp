@@ -17,8 +17,8 @@ NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
 class EventLoop;
-class Listener;
 class EventLoopThreadPool;
+class Listener;
 
 /// We can use this class to create a TCP server.
 /// The typical usage is :
@@ -60,7 +60,10 @@ private:
     void handleNewConnection(Socket&& connSock, const SockAddr& remoteAddr);
 
 private:
-    using ConnectionMap = std::map<uint64_t /* the id of the connection */, TcpConnectionPtr>;
+    using ConnectionMap = std::map<
+        uint64_t /* the id of the connection */,
+        TcpConnectionPtr
+    >;
 
     EventLoop* loop_;    /// the listening event loop.
     SockAddr listenAddr_;

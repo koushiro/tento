@@ -2,10 +2,9 @@
 // Created by koushiro on 9/4/18.
 //
 
-#include "tento/net/EventLoop.hpp"
-
 #include "tento/base/Logger.hpp"
 #include "tento/base/Thread.hpp"
+#include "tento/net/EventLoop.hpp"
 
 using namespace tento;
 using namespace tento::net;
