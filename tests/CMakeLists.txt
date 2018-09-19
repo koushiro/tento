@@ -1,6 +1,3 @@
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/deps/fmt/include)
-include_directories(${PROJECT_SOURCE_DIR}/deps/spdlog/include)
 include_directories(${PROJECT_SOURCE_DIR}/build/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
 
@@ -20,7 +17,7 @@ target_link_libraries(base_thread_test tento)
 add_executable(base_timestamp_test base_timestamp_test.cpp)
 target_link_libraries(base_timestamp_test tento)
 
-# Net -- Reactor classes tests.
+# Net classes tests.
 add_executable(net_event_loop_test net_event_loop_test.cpp)
 target_link_libraries(net_event_loop_test tento)
 

@@ -1,7 +1,3 @@
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/deps/fmt/include)
-include_directories(${PROJECT_SOURCE_DIR}/deps/spdlog/include)
-
 set(LIBRARY_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/build/lib)
 
 set(TENTO_BASE
