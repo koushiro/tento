@@ -27,7 +27,7 @@ int TimerFdCreate() {
 }
 
 void TimerFdSet(int timerfd, Timestamp when) {
-    LOG_TRACE("TimerFdSet, fd = {}, when = {}", timerfd, when);
+//    LOG_TRACE("TimerFdSet, fd = {}, when = {}", timerfd, when);
     // wake up event loop by timerfd_settime()
     struct itimerspec newValue, oldValue;
     memset(&newValue, 0, sizeof(newValue));
@@ -47,7 +47,7 @@ void TimerFdSet(int timerfd, Timestamp when) {
 }
 
 void TimerFdRead(int timerfd) {
-    LOG_TRACE("TimerFdRead, fd = {}", timerfd);
+//    LOG_TRACE("TimerFdRead, fd = {}", timerfd);
     uint64_t howmany;
     ssize_t n = read(timerfd, &howmany, sizeof(howmany));
     if (n != sizeof(howmany)) {
@@ -59,9 +59,6 @@ TimerQueue::TimerQueue(EventLoop* loop)
     : ownerLoop_(loop),
       timerFd_(TimerFdCreate()),
       timerFdChannel_(std::make_unique<Channel>(loop, timerFd_)),
-      timers_(),
-      activeTimers_(),
-      cancelingTimers_(),
       callingExpiredTimers_(false)
 {
     timerFdChannel_->SetReadCallback([this]() { handleRead(); });
@@ -73,14 +70,25 @@ TimerQueue::~TimerQueue() {
     timerFdChannel_->DisableAllEvents();
     timerFdChannel_->Remove();
     close(timerFd_);
-    for (auto& entry : timers_) {
-        auto timer = entry.second;
-        delete timer;
-    }
 }
 
-TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb) {
-    auto timer = new Timer(when, interval, std::move(cb));
+TimerPtr TimerQueue::AddTimer(Timestamp when, Duration interval, const TimerCallback& cb) {
+    auto timer = std::make_shared<Timer>(when, interval, cb);
+    LOG_TRACE("TimerQueue::AddTimer, id = {}, when = {}", timer->Id(), when);
+    /// Transfer actual work to I/O thread, thread safe.
+    ownerLoop_->RunInLoop(
+        [=]() {
+            bool earliestChanged = insert(timer);
+            if (earliestChanged) {
+                TimerFdSet(timerFd_, when);
+            }
+        }
+    );
+    return timer;
+}
+
+TimerPtr TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback&& cb) {
+    auto timer = std::make_shared<Timer>(when, interval, std::move(cb));
     LOG_TRACE("TimerQueue::AddTimer, id = {}, when = {}", timer->Id(), when);
     /// Transfer actual work to I/O thread, thread safe.
     ownerLoop_->RunInLoop(
@@ -92,96 +100,89 @@ TimerId TimerQueue::AddTimer(Timestamp when, Duration interval, TimerCallback cb
         }
     );
 
-    return TimerId(timer->Id(), timer);
+    return timer;
 }
 
-void TimerQueue::CancelTimer(TimerId timerId) {
-    LOG_TRACE("TimerQueue::CancelTimer, id = {}", timerId.first);
+void TimerQueue::CancelTimer(TimerPtr timer) {
+    LOG_TRACE("TimerQueue::CancelTimer, id = {}", timer->Id());
     /// Transfer actual work to I/O thread, thread safe.
     ownerLoop_->RunInLoop(
         [=]() {
-            auto it = activeTimers_.find(timerId);
-            if (it != activeTimers_.end()) {
-                auto timer = it->second;
-                timers_.erase(TimeEntry(timer->Expiration(), timer));
-                activeTimers_.erase(it);
-                delete timer;
+            auto it = activeTimerIds_.find(timer->Id());
+            if (it != activeTimerIds_.end()) {
+                assert(*it == timer->Id());
+                timers_.erase(timer);
+                activeTimerIds_.erase(it);
             } else if (callingExpiredTimers_) {
-                cancelingTimers_.insert(timerId);
+                cancelingTimerIds_.insert(timer->Id());
             }
-            assert(timers_.size() == activeTimers_.size());
+            assert(timers_.size() == activeTimerIds_.size());
         }
     );
 }
 
 void TimerQueue::handleRead() {
-    assert(ownerLoop_->IsInLoopThread());\
+    assert(ownerLoop_->IsInLoopThread());
     TimerFdRead(timerFd_);
 
     Timestamp now = Timestamp::Now();
-    std::vector<TimeEntry> entries = getExpiredTimers(now);
+    std::vector<TimerPtr> timers = getExpiredTimers(now);
 
     callingExpiredTimers_ = true;
-    cancelingTimers_.clear();
-    for (auto& entry : entries) {
-        auto timer = entry.second;
+    cancelingTimerIds_.clear();
+    for (auto& timer : timers) {
         timer->Start();
     }
     callingExpiredTimers_ = false;
 
-    reset(entries, now);
+    reset(timers, now);
 }
 
-std::vector<TimerQueue::TimeEntry> TimerQueue::getExpiredTimers(Timestamp now) {
-    std::vector<TimeEntry> entries;
-    TimeEntry timeEntry(now, nullptr);
-    auto end = timers_.lower_bound(timeEntry);
-    assert(end == timers_.end() || now < end->second->Expiration());
+std::vector<TimerPtr> TimerQueue::getExpiredTimers(Timestamp now) {
+    std::vector<TimerPtr> timers;
+    auto key = std::make_shared<Timer>(now, Duration{0, 0}, nullptr);
+    auto end = timers_.lower_bound(key);
+    assert(end == timers_.end() || now < end->get()->Expiration());
 
-    entries.assign(timers_.begin(), end);
+    timers.assign(timers_.begin(), end);
     timers_.erase(timers_.begin(), end);
-    for (auto& entry : entries) {
-        auto timer = entry.second;
-        activeTimers_.erase(IdEntry(timer->Id(), timer));
+    for (auto& timer : timers) {
+        activeTimerIds_.erase(timer->Id());
     }
 
-    return entries;
+    return timers;
 }
 
-void TimerQueue::reset(const std::vector<TimeEntry>& entries, Timestamp now) {
-    for (const auto& entry : entries) {
-        auto timer = entry.second;
-        IdEntry idEntry(timer->Id(), timer);
-        /// If the timer is periodic and it is not canceled, then restart the timer,
-        /// or delete the timer.
+void TimerQueue::reset(const std::vector<TimerPtr>& timers, Timestamp now) {
+    for (const auto& timer : timers) {
+        /// If the timer is periodic and it is not canceled, then restart the timer.
         if (timer->IsPeriodic() &&
-            cancelingTimers_.find(idEntry) == cancelingTimers_.end()) {
+            cancelingTimerIds_.find(timer->Id()) == cancelingTimerIds_.end()) {
             timer->Restart(now);
             insert(timer);
-        } else {
-            delete timer;
         }
     }
 
     /// Get earliest expiration time from timers_,
     /// set the time by calling timerfd_settime.
     if (!timers_.empty()) {
-        auto timer = timers_.begin()->second;
+        auto timer = timers_.begin()->get();
         Timestamp nextExpire = timer->Expiration();
         assert(nextExpire.IsValid());
         TimerFdSet(timerFd_, nextExpire);
     }
 }
 
-bool TimerQueue::insert(Timer* timer) {
-    assert(timers_.size() == activeTimers_.size());
+bool TimerQueue::insert(TimerPtr timer) {
+    assert(timers_.size() == activeTimerIds_.size());
     bool earliestChanged = false;
-    if (timers_.empty() || timer->Expiration() < timers_.begin()->first) {
+    auto earliestTimer = timers_.begin()->get();
+    if (timers_.empty() || timer->Expiration() < earliestTimer->Expiration()) {
         earliestChanged = true;
     }
-    timers_.insert(TimeEntry(timer->Expiration(), timer));
-    activeTimers_.insert(IdEntry(timer->Id(), timer));
-    assert(timers_.size() == activeTimers_.size());
+    timers_.insert(timer);
+    activeTimerIds_.insert(timer->Id());
+    assert(timers_.size() == activeTimerIds_.size());
     return earliestChanged;
 }
 

@@ -5,7 +5,7 @@ A C++14 network library based on [muduo](https://github.com/chenshuo/muduo).
 ## Features
 
 - Modern C++.
-- Reactor pattern (One loop per thread + threadpool).
+- Reactor pattern (one loop per thread + threadpool).
 - Linux supported only. 
 - Timer supported.
 - Nonblocking multi-thread TCP server. (Unfinished yet)

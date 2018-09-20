@@ -47,16 +47,15 @@ public:
     /// Runs after finish polling.
     /// Safe to call from other threads.
     void QueueInLoop(Callback cb);
-
     /// Safe to call from other threads.
     /// Runs timer callback (at timestamp/after delay time/every interval time).
     /// Returns unique timer id.
-    TimerId RunAt(Timestamp time, TimerCallback cb);
-    TimerId RunAfter(Duration delay, TimerCallback cb);
-    TimerId RunEvery(Duration interval, TimerCallback cb);
+    TimerPtr RunAt(Timestamp time, TimerCallback cb);
+    TimerPtr RunAfter(Duration delay, TimerCallback cb);
+    TimerPtr RunEvery(Duration interval, TimerCallback cb);
     /// Safe to call from other threads.
     /// Cancel timer with given timerId.
-    void CancelTimer(TimerId timerId);
+    void CancelTimer(TimerPtr timer);
 
 public:
     bool IsInLoopThread() const { return tid_ == thread_id(); }

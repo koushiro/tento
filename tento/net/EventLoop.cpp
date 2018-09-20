@@ -27,7 +27,7 @@ int EventFdCreate() {
 }
 
 void EventFdWrite(int eventFd) {
-    LOG_TRACE("EventFdWrite, fd = {}", eventFd);
+//    LOG_TRACE("EventFdWrite, fd = {}", eventFd);
     uint64_t one = 1;
     ssize_t n = write(eventFd, &one, sizeof(one));
     if (n != sizeof(one)) {
@@ -36,7 +36,7 @@ void EventFdWrite(int eventFd) {
 }
 
 void EventFdRead(int eventFd) {
-    LOG_TRACE("EventFdRead, fd = {}", eventFd);
+//    LOG_TRACE("EventFdRead, fd = {}", eventFd);
     uint64_t one = 1;
     ssize_t n = read(eventFd, &one, sizeof(one));
     if (n != sizeof(one)) {
@@ -149,26 +149,26 @@ void EventLoop::QueueInLoop(Callback cb) {
     }
 }
 
-TimerId EventLoop::RunAt(Timestamp time, TimerCallback cb) {
+TimerPtr EventLoop::RunAt(Timestamp time, TimerCallback cb) {
     LOG_TRACE("EventLoop::RunAt, time = {}", time);
     return timerQueue_->AddTimer(time, Duration(0, 0), std::move(cb));
 }
 
-TimerId EventLoop::RunAfter(Duration delay, TimerCallback cb) {
+TimerPtr EventLoop::RunAfter(Duration delay, TimerCallback cb) {
     auto time = Timestamp::Now() + delay;
     LOG_TRACE("EventLoop::RunAfter, time = {}", time);
     return timerQueue_->AddTimer(time, Duration(0, 0), std::move(cb));
 }
 
-TimerId EventLoop::RunEvery(Duration interval, TimerCallback cb) {
+TimerPtr EventLoop::RunEvery(Duration interval, TimerCallback cb) {
     auto time = Timestamp::Now() + interval;
     LOG_TRACE("EventLoop::RunEvery, time = {}", time);
     return timerQueue_->AddTimer(time, interval, std::move(cb));
 }
 
-void EventLoop::CancelTimer(TimerId timerId) {
-    LOG_TRACE("EventLoop::CancelTimer, timer id = {}", timerId.first);
-    return timerQueue_->CancelTimer(timerId);
+void EventLoop::CancelTimer(TimerPtr timer) {
+    LOG_TRACE("EventLoop::CancelTimer, timer id = {}", timer->Id());
+    return timerQueue_->CancelTimer(timer);
 }
 
 void EventLoop::UpdateChannel(Channel* channel) {

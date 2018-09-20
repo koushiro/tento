@@ -25,24 +25,22 @@ public:
     ~TimerQueue();
 
     /// Create a timer to schedule after `interval` from `when`,
-    /// returns an unique id identify this timer.
+    /// returns an pointer that point this timer.
     /// Must be thread safe. Usually be called from other threads.
-    TimerId AddTimer(Timestamp when, Duration interval, TimerCallback cb);
-
-    /// Cancel a timer by unique id.
-    void CancelTimer(TimerId timerId);
+    TimerPtr AddTimer(Timestamp when, Duration interval, const TimerCallback& cb);
+    TimerPtr AddTimer(Timestamp when, Duration interval, TimerCallback&& cb);
+    /// Cancel a timer.
+    void CancelTimer(TimerPtr timerPtr);
 
 private:
-    using TimeEntry = std::pair<Timestamp, Timer*>;
-    using IdEntry = std::pair<uint64_t, Timer*>;    /// same as TimeId.
-    using TimerSetSortByTime = std::set<TimeEntry>;
-    using TimerSetSortById = std::set<IdEntry>;
+    using TimerSet = std::multiset<TimerPtr, TimerCompare>;
+    using TimerIdSet = std::set<uint64_t>;
 
 private:
     void handleRead();
-    std::vector<TimeEntry> getExpiredTimers(Timestamp now);
-    void reset(const std::vector<TimeEntry>& entries, Timestamp now);
-    bool insert(Timer* timer);
+    std::vector<TimerPtr> getExpiredTimers(Timestamp now);
+    void reset(const std::vector<TimerPtr>& timers, Timestamp now);
+    bool insert(TimerPtr timer);
 
 private:
     EventLoop* ownerLoop_;
@@ -51,10 +49,9 @@ private:
     /// Life time of the channel is managed by TimerQueue.
     std::unique_ptr<Channel> timerFdChannel_;
 
-    /// timers_ and activeTimers store the same timers.
-    TimerSetSortByTime timers_;
-    TimerSetSortById activeTimers_;
-    TimerSetSortById cancelingTimers_;
+    TimerSet timers_;
+    TimerIdSet activeTimerIds_;
+    TimerIdSet cancelingTimerIds_;
     bool callingExpiredTimers_;
 };
 

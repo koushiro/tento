@@ -40,5 +40,11 @@ private:
     TimerCallback callback_;
 };
 
+struct TimerCompare {
+    bool operator() (const TimerPtr& lhs, const TimerPtr& rhs) const {
+        return lhs->Expiration() < rhs->Expiration();
+    }
+};
+
 NAMESPACE_END(net)
 NAMESPACE_END(tento)

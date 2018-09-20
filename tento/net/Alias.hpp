@@ -20,7 +20,7 @@ class Channel;
 using ChannelList = std::vector<Channel*>;
 
 class Timer;
-using TimerId = std::pair<uint64_t, Timer*>;
+using TimerPtr = std::shared_ptr<Timer>;
 
 using TimerCallback = std::function<void ()>;
 
