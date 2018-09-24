@@ -11,6 +11,8 @@ set(TEST_FILES
         test_timestamp.cpp
 
         # net
+        test_buffer.cpp
+        test_socket.cpp
         test_listener.cpp
         test_event_loop.cpp
         test_event_loop_thread.cpp

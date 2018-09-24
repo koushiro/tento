@@ -10,7 +10,10 @@
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-ssize_t net::Buffer::ReadFromFd(int fd, int* errorCode) {
+constexpr size_t Buffer::kCheapPrependSize;
+constexpr size_t Buffer::kInitialSize;
+
+ssize_t Buffer::ReadFromFd(int fd, int* errorCode) {
     // saved an ioctl()/FIONREAD call to tell how much to read
     char extrabuf[65536];
     struct iovec vec[2];

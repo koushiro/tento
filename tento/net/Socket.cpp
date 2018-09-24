@@ -9,15 +9,22 @@
 
 #include <cstring>
 #include <cassert>
+#include <sstream>
 
 #include "tento/base/Logger.hpp"
 
 NAMESPACE_BEGIN(tento)
 NAMESPACE_BEGIN(net)
 
-bool SplitIpAndPort(const std::string& address, std::string& ip, uint16_t& port) {
-    /// TODO
-    return false;
+std::vector<std::string> SockAddr::splitIpAndPort(const std::string& address) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(address);
+    while (std::getline(tokenStream, token, ':'))
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
 
 SockAddr::SockAddr(uint16_t port, bool loopback) {
@@ -37,12 +44,11 @@ SockAddr::SockAddr(const std::string& ip, uint16_t port) {
 }
 
 SockAddr::SockAddr(const std::string& addr) {
-    std::string ip;
-    uint16_t port;
-    {
-        bool ret = SplitIpAndPort(addr, ip, port);
-        assert(ret);
-    }
+    auto tokens = splitIpAndPort(addr);
+    assert(tokens.size() == 2);
+    std::string ip = tokens[0];
+    uint16_t port = static_cast<uint16_t>(std::stoul(tokens[1]));
+
     memset(&addr_, 0, sizeof(addr_));
     addr_.sin_family = AF_INET;
     int ret = inet_pton(AF_INET, ip.c_str(), &addr_.sin_addr.s_addr);
@@ -91,7 +97,7 @@ Socket::Socket()
 Socket::Socket(int connFd)
     : sockFd_(connFd)
 {
-    if (sockFd_ == kInvalidSocket) {
+    if (sockFd_ == INVALID_SOCKET) {
         LOG_ERROR("Socket::Socket(int connFd), connFd is invalid socket fd");
     } else {
         LOG_TRACE("Socket::Socket, create socket, fd = {}", sockFd_);
@@ -99,7 +105,7 @@ Socket::Socket(int connFd)
 }
 
 Socket::~Socket() {
-    if (sockFd_ == kInvalidSocket) {
+    if (sockFd_ == INVALID_SOCKET) {
         // This object has been closed or moved.
         // So we don't need to call close.
         return;
@@ -164,7 +170,7 @@ Socket Socket::Accept(SockAddr& peerAddr) {
 }
 
 void Socket::Close() {
-    if (sockFd_ == kInvalidSocket) {
+    if (sockFd_ == INVALID_SOCKET) {
         // This object has been closed or moved.
         // So we don't need to call close.
         return;
@@ -172,7 +178,7 @@ void Socket::Close() {
 
     LOG_TRACE("Socket::Close, close socket, fd = {}", sockFd_);
     close(sockFd_);
-    sockFd_ = kInvalidSocket;
+    sockFd_ = INVALID_SOCKET;
 }
 
 void Socket::ShutdownWrite() {

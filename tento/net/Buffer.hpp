@@ -35,9 +35,9 @@ public:
 public:
     explicit Buffer(size_t initialSize = kInitialSize,
                     size_t prependSize = kCheapPrependSize)
-        : buffer_(kCheapPrependSize + initialSize),
-          readIndex_(kCheapPrependSize),
-          writeIndex_(kCheapPrependSize)
+        : buffer_(prependSize + initialSize),
+          readIndex_(prependSize),
+          writeIndex_(prependSize)
     {
         assert(PrependableBytes() == prependSize);
         assert(ReadableBytes() == 0);
@@ -52,14 +52,14 @@ public:
     size_t ReadableBytes()    const { return writeIndex_ - readIndex_; }
     size_t WritableBytes()    const { return buffer_.size() - writeIndex_; }
 
-    const char* ReadBegin()  const { return buffer_.data() + readIndex_; }
-          char* ReadBegin()        { return buffer_.data() + readIndex_; }
-    const char* WriteBegin() const { return buffer_.data() + writeIndex_; }
-          char* WriteBegin()       { return buffer_.data() + writeIndex_; }
+    const char* ReadBegin()   const { return buffer_.data() + readIndex_; }
+          char* ReadBegin()         { return buffer_.data() + readIndex_; }
+    const char* WriteBegin()  const { return buffer_.data() + writeIndex_; }
+          char* WriteBegin()        { return buffer_.data() + writeIndex_; }
 
-    void ShrinkToFit()    { buffer_.shrink_to_fit(); }
-    void Capacity() const { buffer_.capacity(); }
-    void Size()     const { buffer_.size(); }
+    void ShrinkToFit()              { buffer_.shrink_to_fit(); }
+    auto Capacity()           const { return buffer_.capacity(); }
+    auto Size()               const { return buffer_.size(); }
 
     void Swap(Buffer &rhs) {
         buffer_.swap(rhs.buffer_);
@@ -83,7 +83,6 @@ public:
     }
 
     void WriteBytes(size_t n)   { assert(n <= WritableBytes()); writeIndex_ += n; }
-    void UnWriteBytes(size_t n) { assert(n <= ReadableBytes()); writeIndex_ -= n; }
 
     /// Append int64_t/int32_t/int16_t/int8_t with network endian
     void Append(const void* data, size_t len) { Write(data, len); }
@@ -110,7 +109,6 @@ public:
         assert(len <= ReadableBytes());
         std::memcpy(data, ReadBegin(), len);
     }
-
     /// Peek int64_t/int32_t/int16_t/int8_t with network endian
     int64_t PeekInt64() const { int64_t be = 0; Peek(&be, sizeof(be)); return be64toh(be); }
     int32_t PeekInt32() const { int32_t be = 0; Peek(&be, sizeof(be)); return be32toh(be); }
@@ -134,17 +132,6 @@ public:
         readIndex_ = kCheapPrependSize;
         writeIndex_ = kCheapPrependSize;
     }
-
-//    std::string ReadBytesAsString(size_t len) {
-//        assert(len <= ReadableBytes());
-//        std::string res(ReadBegin(), len);
-//        ReadBytes(len);
-//        return res;
-//    }
-
-//    std::string ReadAllBytesAsString() {
-//        return ReadBytesAsString(ReadableBytes());
-//    }
 
     /// Read int64_t/int32_t/int16_t/int8_t with network endian
     int64_t ReadInt64() { int64_t p = PeekInt64(); ReadBytes(sizeof(p)); return p; }

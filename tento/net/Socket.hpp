@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <string>
+#include <vector>
 
 #include "tento/base/Common.hpp"
 #include "tento/base/Copyable.hpp"
@@ -34,36 +35,33 @@ public:
         );
     }
 
-    struct sockaddr* GetRaw() {
-        return static_cast<struct sockaddr*>(
-            static_cast<void*>(&addr_)
-        );
-    }
-
     std::string ToIp() const;
     uint16_t ToPort() const;
     std::string ToIpAndPort() const;
 
 private:
-    struct sockaddr_in  addr_;
+    std::vector<std::string> splitIpAndPort(const std::string& address);
+
+private:
+    struct sockaddr_in addr_;
 };
+
+#define INVALID_SOCKET (-1)
 
 /// Socket file descriptor RAII class, move-only.
 class Socket : NonCopyable {
 public:
-    static constexpr int kInvalidSocket = -1;
-
     explicit Socket();
     explicit Socket(int connFd);
     ~Socket();
 
     Socket(Socket&& rhs) noexcept : sockFd_(rhs.sockFd_) {
-        rhs.sockFd_ = kInvalidSocket;
+        rhs.sockFd_ = INVALID_SOCKET;
     }
     Socket& operator=(Socket&& rhs) noexcept {
         if (this != &rhs) {
             sockFd_ = rhs.sockFd_;
-            rhs.sockFd_ = kInvalidSocket;
+            rhs.sockFd_ = INVALID_SOCKET;
         }
         return *this;
     }
@@ -89,6 +87,7 @@ public:
     void SetReusePort(bool on);
     void SetKeepAlive(bool on);
     void SetTimeout(uint32_t timeout_ms);
+
 private:
     int sockFd_;
 };

@@ -17,7 +17,7 @@ set(DEPS_DIR ${PROJECT_SOURCE_DIR}/deps)
 include_directories(${DEPS_DIR}/fmt/include)
 # include spdlog/include directory
 include_directories(${DEPS_DIR}/spdlog/include)
-# Add the google test subdirectory (need to move generated lib to target/lib)
+# Add the google test subdirectory
 add_subdirectory(${DEPS_DIR}/googletest)
 # include googltest/include directory.
 include_directories(${DEPS_DIR}/googletest/googletest/include)
